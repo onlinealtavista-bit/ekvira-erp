@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHRI EKVIRA MFG - Driver Delivery Portal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTML5 QR/Barcode Camera Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body class="bg-slate-100 p-2 sm:p-4 font-sans">
+
+    <div class="max-w-md mx-auto space-y-4">
+        
+        <!-- HEADER (ONLY DRIVER VIEW) -->
+        <div class="bg-blue-900 text-white rounded-xl shadow-md p-4 text-center">
+            <h2 class="text-lg font-bold">SHRI EKVIRA MFG COATS PVT. LTD.</h2>
+            <p class="text-xs text-blue-200">🚚 Driver Mobile Delivery & Camera Audit Portal</p>
+        </div>
+
+        <!-- SHIPMENT LEDGER FOR DRIVER -->
+        <div class="bg-white rounded-xl shadow p-4 border space-y-3">
+            <h3 class="text-sm font-bold text-gray-800 border-b pb-2">📦 Active Delivery Shipments</h3>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left border">
+                    <thead class="bg-slate-100 text-gray-700">
+                        <tr>
+                            <th class="p-2 border">Dealer & Order</th>
+                            <th class="p-2 border text-center">Pcs</th>
+                            <th class="p-2 border text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="driverTableBody">
+                        <tr><td colspan="3" class="p-4 text-center text-gray-400">Loading delivery data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- DELIVERY AUDIT & MOBILE CAMERA SCANNER MODAL -->
+    <div id="deliveryModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-xs flex justify-center items-center p-3 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-4 space-y-3 max-h-[95vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-xs font-bold text-blue-900">📷 Camera Audit & Delivery Confirmation</h3>
+                <button onclick="closeDeliveryModal()" class="text-gray-400 font-bold hover:text-black">✕</button>
+            </div>
+
+            <div id="deliveryModalInfo" class="text-[11px] bg-blue-50 p-2 rounded space-y-0.5 text-blue-900"></div>
+
+            <!-- LIVE CAMERA SCANNER FOR DRIVER -->
+            <div class="bg-slate-100 p-2.5 rounded border space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-[11px] font-bold text-gray-800">Scan Damaged Bundle:</span>
+                    <button id="toggleCamBtn" onclick="toggleCameraScanner()" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] px-2 py-1 rounded font-bold">
+                        📷 Open Mobile Camera
+                    </button>
+                </div>
+                
+                <div id="cameraScannerBox" class="hidden border-2 border-blue-500 rounded overflow-hidden bg-black max-w-xs mx-auto">
+                    <div id="reader" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <!-- NET CALCULATION SUMMARY DISPLAY -->
+            <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded text-xs space-y-1">
+                <div class="font-bold text-emerald-900 flex justify-between text-[11px]">
+                    <span>🚚 Dispatched: <b id="calcDispatched">0 Pcs</b></span>
+                    <span>💔 Issues: <b id="calcIssues" class="text-orange-600">0 Pcs</b></span>
+                </div>
+                <div class="border-t border-emerald-200 pt-1 flex justify-between items-center">
+                    <span class="text-xs font-bold text-emerald-800">✅ Net Delivered OK:</span>
+                    <span class="text-base font-bold text-emerald-700" id="calcNetDelivered">0 Pcs</span>
+                </div>
+            </div>
+
+            <!-- BUNDLE CHECKLIST -->
+            <div class="space-y-1.5">
+                <span class="text-[11px] font-bold text-gray-700">Bundle Status (Default All OK):</span>
+                <div id="bundleChecklist" class="max-h-40 overflow-y-auto border p-1.5 rounded space-y-1.5 text-[11px] bg-slate-50"></div>
+            </div>
+
+            <div class="bg-amber-50 p-2 rounded border border-amber-200 space-y-1 text-xs">
+                <span class="font-bold text-amber-900 text-[11px]">Dealer WhatsApp OTP:</span>
+                <input type="text" id="deliveryOtpInput" maxlength="4" placeholder="Enter 4-Digit OTP" class="w-full border rounded p-1.5 text-center text-lg font-mono font-bold tracking-widest text-blue-900">
+            </div>
+
+            <div class="flex justify-end gap-2 pt-1">
+                <button onclick="closeDeliveryModal()" class="px-3 py-1 text-xs border rounded">Cancel</button>
+                <button onclick="confirmIndividualDelivery()" class="px-3 py-1 text-xs bg-emerald-600 text-white font-bold rounded shadow">Verify OTP & Confirm ✅</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Synchronize with LocalStorage or API
+        let shipments = JSON.parse(localStorage.getItem('ekvira_shipments') || '[]');
+        let activeShipment = null;
+        let html5QrCode = null;
+        let isCameraActive = false;
+
+        const beepAudio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
+
+        window.onload = function() {
+            renderDriverTable();
+        };
+
+        function renderDriverTable() {
+            let tbody = document.getElementById('driverTableBody');
+            tbody.innerHTML = "";
+
+            let inTransitShipments = shipments.filter(s => s.status === 'IN_TRANSIT');
+
+            if(inTransitShipments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-400">No pending deliveries found.</td></tr>`;
+            } else {
+                inTransitShipments.forEach(s => {
+                    tbody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-2 border">
+                                <b class="text-blue-900">${s.dealerName}</b><br>
+                                <span class="text-[10px] text-gray-600">${s.product}</span>
+                            </td>
+                            <td class="p-2 border text-center font-bold text-gray-800">${s.dispatchedBundles.length}</td>
+                            <td class="p-2 border text-center">
+                                <button onclick="openDeliveryModal(${s.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded text-[10px] shadow">📷 Start Delivery Audit</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        function openDeliveryModal(id) {
+            activeShipment = shipments.find(s => s.id === id);
+            if(!activeShipment) return;
+
+            document.getElementById('deliveryModalInfo').innerHTML = `
+                <p><b>Dealer:</b> ${activeShipment.dealerName}</p>
+                <p><b>Product:</b> ${activeShipment.product}</p>
+            `;
+
+            renderChecklist();
+            updateModalCalculations();
+            document.getElementById('deliveryOtpInput').value = "";
+            document.getElementById('deliveryModal').classList.remove('hidden');
+        }
+
+        function renderChecklist() {
+            let checklist = document.getElementById('bundleChecklist');
+            checklist.innerHTML = "";
+
+            activeShipment.dispatchedBundles.forEach((bCode, idx) => {
+                checklist.innerHTML += `
+                    <div id="bundleRow_${bCode}" class="flex items-center justify-between p-1.5 bg-white rounded border">
+                        <span class="font-mono font-bold text-gray-800 text-[10px]">${bCode}</span>
+                        <div class="flex items-center gap-2 text-[10px]">
+                            <label class="flex items-center gap-0.5"><input type="radio" name="status_${idx}" value="OK" checked onchange="updateModalCalculations()"><span class="text-emerald-700 font-bold">OK</span></label>
+                            <label class="flex items-center gap-0.5"><input type="radio" name="status_${idx}" value="DAMAGED" onchange="updateModalCalculations()"><span class="text-orange-600 font-bold">Damage</span></label>
+                            <label class="flex items-center gap-0.5"><input type="radio" name="status_${idx}" value="MISSING" onchange="updateModalCalculations()"><span class="text-red-600 font-bold">Missing</span></label>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function updateModalCalculations() {
+            if(!activeShipment) return;
+            let total = activeShipment.dispatchedBundles.length;
+            let issues = 0;
+
+            activeShipment.dispatchedBundles.forEach((bCode, idx) => {
+                let selectedRadio = document.querySelector(`input[name="status_${idx}"]:checked`);
+                if(selectedRadio && selectedRadio.value !== 'OK') issues++;
+            });
+
+            document.getElementById('calcDispatched').innerText = `${total} Pcs`;
+            document.getElementById('calcIssues').innerText = `${issues} Pcs`;
+            document.getElementById('calcNetDelivered').innerText = `${total - issues} Pcs OK`;
+        }
+
+        function toggleCameraScanner() {
+            let camBox = document.getElementById('cameraScannerBox');
+            let btn = document.getElementById('toggleCamBtn');
+
+            if (!isCameraActive) {
+                camBox.classList.remove('hidden');
+                btn.innerText = "✕ Stop Camera";
+                btn.className = "bg-red-600 text-white text-[10px] px-2 py-1 rounded font-bold";
+
+                html5QrCode = new Html5Qrcode("reader");
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 220, height: 130 } },
+                    (decodedText) => {
+                        let scannedCode = decodedText.trim().toUpperCase();
+                        let index = activeShipment.dispatchedBundles.indexOf(scannedCode);
+
+                        if (index !== -1) {
+                            let damagedRadio = document.querySelector(`input[name="status_${index}"][value="DAMAGED"]`);
+                            if (damagedRadio) {
+                                damagedRadio.checked = true;
+                                updateModalCalculations();
+                                try { beepAudio.play(); } catch(e){}
+                            }
+                        }
+                    },
+                    (err) => {}
+                );
+                isCameraActive = true;
+            } else {
+                if(html5QrCode) {
+                    html5QrCode.stop().then(() => {
+                        html5QrCode.clear();
+                        camBox.classList.add('hidden');
+                        btn.innerText = "📷 Open Mobile Camera";
+                        btn.className = "bg-blue-600 text-white text-[10px] px-2 py-1 rounded font-bold";
+                        isCameraActive = false;
+                    });
+                }
+            }
+        }
+
+        function closeDeliveryModal() {
+            if(isCameraActive) toggleCameraScanner();
+            document.getElementById('deliveryModal').classList.add('hidden');
+            activeShipment = null;
+        }
+
+        function confirmIndividualDelivery() {
+            if(!activeShipment) return;
+            let enteredOtp = document.getElementById('deliveryOtpInput').value.trim();
+
+            if(enteredOtp !== activeShipment.otp) {
+                alert("❌ Wrong OTP!");
+                return;
+            }
+
+            let received = [], damaged = [], missing = [];
+
+            activeShipment.dispatchedBundles.forEach((bCode, idx) => {
+                let val = document.querySelector(`input[name="status_${idx}"]:checked`).value;
+                if(val === 'OK') received.push(bCode);
+                else if(val === 'DAMAGED') damaged.push(bCode);
+                else if(val === 'MISSING') missing.push(bCode);
+            });
+
+            activeShipment.status = (damaged.length > 0 || missing.length > 0) ? 'DELIVERED_ISSUES' : 'DELIVERED_OK';
+            activeShipment.receivedBundles = received;
+            activeShipment.damagedBundles = damaged;
+            activeShipment.missingBundles = missing;
+
+            localStorage.setItem('ekvira_shipments', JSON.stringify(shipments));
+            renderDriverTable();
+            closeDeliveryModal();
+            alert("✅ Delivery Successfully Verified & Recorded!");
+        }
+    </script>
+</body>
+</html>
