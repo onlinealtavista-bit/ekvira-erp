@@ -76,8 +76,8 @@
 
         <!-- PRODUCT WISE INVENTORY BREAKDOWN TABLE -->
         <div id="productSummaryCard" class="bg-white rounded-xl shadow p-4 border space-y-2">
-            <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider">📊 Product-Wise Stock & Transit Summary</h3>
-            <div class="overflow-x-auto">
+            <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider bg-blue-100 text-blue-900 inline-block px-2 py-1 rounded">📊 PRODUCT-WISE STOCK & TRANSIT SUMMARY</h3>
+            <div class="overflow-x-auto mt-2">
                 <table class="w-full text-xs text-left border">
                     <thead class="bg-slate-100 text-gray-700 font-bold">
                         <tr>
@@ -90,7 +90,9 @@
                             <th class="p-2 border text-center text-red-600">Missing</th>
                         </tr>
                     </thead>
-                    <tbody id="productSummaryBody"></tbody>
+                    <tbody id="productSummaryBody">
+                        <!-- Javascript will fill this now -->
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -173,9 +175,7 @@
 
                     <input type="text" id="gunBarcodeInput" placeholder="🔫 Scan Bundle Barcode Here..." class="w-full border-2 border-amber-500 rounded p-2.5 text-sm font-mono font-bold uppercase bg-white focus:outline-none focus:ring-2 focus:ring-amber-600 shadow-inner" autofocus>
 
-                    <p id="scanFeedback" class="text-[11px] font-semibold text-emerald-700 h-4"></p>
-
-                    <div class="border-t border-amber-200 pt-2">
+                    <div class="border-t border-amber-200 pt-2 mt-2">
                         <span class="text-[10px] text-gray-500 font-bold block mb-1">Scanned Bundle IDs:</span>
                         <div id="scannedBundleTags" class="flex flex-wrap gap-1 max-h-36 overflow-y-auto"></div>
                     </div>
@@ -213,29 +213,9 @@
 
         </div>
 
-        <!-- STORE AUDIT PANEL -->
-        <div id="storeVerificationCard" class="bg-purple-900 text-white rounded-xl shadow p-4 border border-purple-800">
-            <h3 class="text-md font-bold flex items-center gap-2 border-b border-purple-700 pb-2 mb-3">📦 Store Damaged & Missing Goods Audit</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-xs text-left text-purple-100">
-                    <thead class="bg-purple-800 text-purple-200">
-                        <tr>
-                            <th class="p-2">Driver & Vehicle</th>
-                            <th class="p-2">Dealer Name</th>
-                            <th class="p-2 text-center">Damaged Bundles</th>
-                            <th class="p-2 text-center">Missing Bundles</th>
-                            <th class="p-2 text-center">Audit Status & Time</th>
-                            <th class="p-2 text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="storeReturnTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-
     </div>
 
-    <!-- DELIVERY AUDIT & MOBILE CAMERA SCANNER MODAL -->
+    <!-- DELIVERY AUDIT & MOBILE CAMERA SCANNER MODAL (FOR DRIVER) -->
     <div id="deliveryModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs flex justify-center items-center p-3 z-50">
         <div class="bg-white rounded-xl shadow-2xl max-w-xl w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-2">
@@ -248,7 +228,7 @@
             <!-- LIVE CAMERA SCANNER FOR DRIVER -->
             <div class="bg-slate-100 p-3 rounded border space-y-2">
                 <div class="flex justify-between items-center">
-                    <span class="text-xs font-bold text-gray-800">📷 Scan Damaged Bundle with Mobile Camera:</span>
+                    <span class="text-xs font-bold text-gray-800">📷 Scan Damaged Bundle:</span>
                     <button id="toggleCamBtn" onclick="toggleCameraScanner()" class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] px-2.5 py-1 rounded font-bold">
                         📷 Open Mobile Camera
                     </button>
@@ -319,11 +299,10 @@
         }
 
         window.onload = function() {
-            // Check if URL has ?mode=driver
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('mode') === 'driver') {
                 switchRole('DRIVER');
-                document.getElementById('roleSelectorBox').classList.add('hidden'); // Hide dropdown for driver security
+                document.getElementById('roleSelectorBox').classList.add('hidden'); // Hide dropdown for driver
             } else {
                 updateStats();
                 renderTable();
@@ -336,7 +315,6 @@
                 document.getElementById('dispatchFormCard').classList.add('hidden');
                 document.getElementById('factoryStats').classList.add('hidden');
                 document.getElementById('productSummaryCard').classList.add('hidden');
-                document.getElementById('storeVerificationCard').classList.add('hidden');
                 document.getElementById('excelBtn').classList.add('hidden');
                 document.getElementById('shipmentsCard').className = "bg-white rounded-xl shadow p-4 lg:col-span-3 border";
                 document.getElementById('tableTitle').innerText = "🚚 Driver Mobile Portal - Deliveries & Camera Audit";
@@ -346,12 +324,82 @@
                 document.getElementById('dispatchFormCard').classList.remove('hidden');
                 document.getElementById('factoryStats').classList.remove('hidden');
                 document.getElementById('productSummaryCard').classList.remove('hidden');
-                document.getElementById('storeVerificationCard').classList.remove('hidden');
                 document.getElementById('excelBtn').classList.remove('hidden');
                 document.getElementById('shipmentsCard').className = "bg-white rounded-xl shadow p-4 lg:col-span-2 border";
                 document.getElementById('tableTitle').innerText = "📋 Live Dispatch Ledger & Net Delivery Audit";
             }
             renderTable();
+        }
+
+        // ==========================================
+        // 🎯 FIX: UPDATE STATS & PRODUCT SUMMARY ROW RENDER LOGIC
+        // ==========================================
+        function updateStats() {
+            let filter = document.getElementById('globalProductFilter') ? document.getElementById('globalProductFilter').value : 'ALL';
+            let totalStore = 0, totalDispatched = 0, totalTransit = 0, totalDelivered = 0, totalDamaged = 0, totalMissing = 0;
+
+            let summaryBody = document.getElementById('productSummaryBody');
+            if(summaryBody) summaryBody.innerHTML = "";
+
+            const allCategories = [
+                "Hydrogoal Inline Pipe",
+                "Rain Pipe",
+                "Flat Inline Pipe",
+                "Submain Pipe"
+            ];
+
+            allCategories.forEach(cat => {
+                let catStore = productStock[cat] || 0;
+                let catDisp = 0, catTransit = 0, catDeliv = 0, catDamaged = 0, catMissing = 0;
+
+                // Calculate product specific stats from shipments
+                shipments.forEach(s => {
+                    if(s.product === cat) {
+                        let qty = s.dispatchedBundles.length;
+                        catDisp += qty;
+                        if(s.status === 'IN_TRANSIT') {
+                            catTransit += qty;
+                        } else {
+                            catDeliv += s.receivedBundles.length;
+                            catDamaged += s.damagedBundles.length;
+                            catMissing += s.missingBundles.length;
+                        }
+                    }
+                });
+
+                // Generate table row for Product Summary Table
+                if(summaryBody) {
+                    summaryBody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-2 border font-semibold text-gray-800">${cat}</td>
+                            <td class="p-2 border text-center font-bold text-indigo-700">${catStore} Pcs</td>
+                            <td class="p-2 border text-center font-semibold text-gray-700">${catDisp} Pcs</td>
+                            <td class="p-2 border text-center font-semibold text-amber-600">${catTransit} Pcs</td>
+                            <td class="p-2 border text-center font-bold text-emerald-600">${catDeliv} Pcs</td>
+                            <td class="p-2 border text-center font-semibold text-orange-600">${catDamaged} Pcs</td>
+                            <td class="p-2 border text-center font-semibold text-red-600">${catMissing} Pcs</td>
+                        </tr>
+                    `;
+                }
+
+                // Add to overall top stats based on filter
+                if(filter === 'ALL' || filter === cat) {
+                    totalStore += catStore;
+                    totalDispatched += catDisp;
+                    totalTransit += catTransit;
+                    totalDelivered += catDeliv;
+                    totalDamaged += catDamaged;
+                    totalMissing += catMissing;
+                }
+            });
+
+            // Update Top Cards
+            if(document.getElementById('statStoreStock')) document.getElementById('statStoreStock').innerText = totalStore + " Pcs";
+            if(document.getElementById('statDispatched')) document.getElementById('statDispatched').innerText = totalDispatched + " Pcs";
+            if(document.getElementById('statTransit')) document.getElementById('statTransit').innerText = totalTransit + " Pcs";
+            if(document.getElementById('statDelivered')) document.getElementById('statDelivered').innerText = totalDelivered + " Pcs";
+            if(document.getElementById('statDamaged')) document.getElementById('statDamaged').innerText = totalDamaged + " Pcs";
+            if(document.getElementById('statMissing')) document.getElementById('statMissing').innerText = totalMissing + " Pcs";
         }
 
         // PRODUCTION INWARD
@@ -364,7 +412,7 @@
             productStock[cat] = (productStock[cat] || 0) + qty;
             saveAllData();
             updateStats();
-            alert(`✅ Stock Added to Store Inventory!\nProduct: ${cat}\nQty Added: ${qty} Bundles`);
+            alert(`✅ Stock Added!\nProduct: ${cat}\nQty: ${qty} Bundles`);
             document.getElementById('mfgInwardForm').reset();
         });
 
@@ -428,9 +476,7 @@
                 missingBundles: [],
                 status: 'IN_TRANSIT',
                 deliveredDateTime: '',
-                otp: Math.floor(1000 + Math.random() * 9000).toString(),
-                storeVerified: false,
-                storeVerifiedTime: ''
+                otp: Math.floor(1000 + Math.random() * 9000).toString()
             };
 
             productStock[category] = Math.max(0, (productStock[category] || 0) - shipment.dispatchedBundles.length);
@@ -456,14 +502,18 @@
             let damagedQty = rec.damagedBundles.length + rec.missingBundles.length;
 
             let fullText = !isDelivered ? 
-                `*SHRI EKVIRA MFG COATS PVT LTD*\n*Dispatch & Anti-Theft Security OTP*\n------------------------------------\n📅 Dispatch Time: ${rec.dispatchDateTime}\nDear *${rec.dealerName}*,\n\nYour shipment of *${rec.product} (${rec.dispatchedBundles.length} Bundles)* has been dispatched via Vehicle *${rec.vehicleNo}* (Driver: ${rec.driverName}).\n\n🔑 Delivery Verification OTP: *${rec.otp}*\n\nPlease inspect each bundle and share this OTP with driver to confirm.` :
-                `*SHRI EKVIRA MFG COATS PVT LTD*\n*Final Delivery Receipt & Audit*\n------------------------------------\n📅 Delivery Time: ${rec.deliveredDateTime}\nDear *${rec.dealerName}*,\n\nDelivery Status for *${rec.product}*:\n🚚 Total Dispatched: ${rec.dispatchedBundles.length} Pcs\n✅ *Net Delivered OK: ${netDeliveredQty} Pcs*\n💔 Damaged/Returned: ${damagedQty} Pcs\n\nThank you!`;
+                `*SHRI EKVIRA MFG COATS PVT LTD*\n*Dispatch & Security OTP*\n------------------------------------\n📅 Time: ${rec.dispatchDateTime}\nDear *${rec.dealerName}*,\n\nYour shipment of *${rec.product} (${rec.dispatchedBundles.length} Bundles)* dispatched via *${rec.vehicleNo}* (Driver: ${rec.driverName}).\n\n🔑 Verification OTP: *${rec.otp}*\n\nShare this OTP with driver after inspection.` :
+                `*SHRI EKVIRA MFG COATS PVT LTD*\n*Final Delivery Receipt*\n------------------------------------\n📅 Delivered: ${rec.deliveredDateTime}\nDear *${rec.dealerName}*,\n\nStatus for *${rec.product}*:\n🚚 Dispatched: ${rec.dispatchedBundles.length} Pcs\n✅ *Net Delivered OK: ${netDeliveredQty} Pcs*\n💔 Damaged/Issues: ${damagedQty} Pcs\n\nThank you!`;
 
             let phone = rec.dealerPhone.replace(/\D/g, '');
             if (phone.length === 10) phone = "91" + phone;
 
             let waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(fullText)}`;
             window.open(waUrl, '_blank');
+        }
+        
+        function resendWhatsAppOtp() {
+            if(activeShipment) triggerWhatsAppMessage(activeShipment);
         }
 
         function renderTable() {
@@ -476,9 +526,9 @@
                 shipments.forEach(s => {
                     let badge = s.status === 'IN_TRANSIT' ? `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">🚚 In-Transit</span>` : `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">✅ Delivered</span>`;
 
-                    let netDeliveredText = s.status === 'IN_TRANSIT' ? `<span class="text-amber-600 font-bold">Pending Delivery</span>` : `<b class="text-emerald-700 text-sm">${s.receivedBundles.length} Pcs</b>`;
+                    let netDeliveredText = s.status === 'IN_TRANSIT' ? `<span class="text-amber-600 font-bold">Pending</span>` : `<b class="text-emerald-700 text-sm">${s.receivedBundles.length} Pcs</b>`;
 
-                    let action = s.status === 'IN_TRANSIT' ? `<button onclick="openDeliveryModal(${s.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded text-xs shadow flex items-center gap-1 mx-auto">📷 Camera Audit & OTP</button>` : `<span class="text-gray-400 font-bold">Completed</span>`;
+                    let action = s.status === 'IN_TRANSIT' ? `<button onclick="openDeliveryModal(${s.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded text-xs shadow flex items-center gap-1 mx-auto">📷 Audit & OTP</button>` : `<span class="text-gray-400 font-bold">Completed</span>`;
 
                     tbody.innerHTML += `
                         <tr class="border-b hover:bg-gray-50">
@@ -496,35 +546,12 @@
             }
         }
 
-        function updateStats() {
-            let totalStore = 0, totalDispatched = 0, totalTransit = 0, totalDelivered = 0, totalDamaged = 0, totalMissing = 0;
-
-            Object.keys(productStock).forEach(cat => totalStore += productStock[cat]);
-
-            shipments.forEach(s => {
-                totalDispatched += s.dispatchedBundles.length;
-                if(s.status === 'IN_TRANSIT') totalTransit += s.dispatchedBundles.length;
-                else {
-                    totalDelivered += s.receivedBundles.length;
-                    totalDamaged += s.damagedBundles.length;
-                    totalMissing += s.missingBundles.length;
-                }
-            });
-
-            document.getElementById('statStoreStock').innerText = totalStore + " Pcs";
-            document.getElementById('statDispatched').innerText = totalDispatched + " Pcs";
-            document.getElementById('statTransit').innerText = totalTransit + " Pcs";
-            document.getElementById('statDelivered').innerText = totalDelivered + " Pcs";
-            document.getElementById('statDamaged').innerText = totalDamaged + " Pcs";
-            document.getElementById('statMissing').innerText = totalMissing + " Pcs";
-        }
-
         function openDeliveryModal(id) {
             activeShipment = shipments.find(s => s.id === id);
             if(!activeShipment) return;
 
             document.getElementById('deliveryModalInfo').innerHTML = `
-                <p><b>Dealer:</b> ${activeShipment.dealerName} | <b>Driver:</b> ${activeShipment.driverName} (${activeShipment.vehicleNo})</p>
+                <p><b>Dealer:</b> ${activeShipment.dealerName} | <b>Driver:</b> ${activeShipment.driverName}</p>
                 <p><b>Product:</b> ${activeShipment.product}</p>`;
 
             renderChecklist();
@@ -538,11 +565,11 @@
             checklist.innerHTML = "";
             activeShipment.dispatchedBundles.forEach((bCode, idx) => {
                 checklist.innerHTML += `
-                    <div id="bundleRow_${bCode}" class="flex items-center justify-between p-2 bg-white rounded border">
+                    <div class="flex items-center justify-between p-2 bg-white rounded border">
                         <span class="font-mono font-bold text-gray-800">${bCode}</span>
                         <div class="flex items-center gap-3 text-xs">
                             <label class="flex items-center gap-1"><input type="radio" name="status_${idx}" value="OK" checked onchange="updateModalCalculations()"><span class="text-emerald-700 font-bold">OK</span></label>
-                            <label class="flex items-center gap-1"><input type="radio" name="status_${idx}" value="DAMAGED" onchange="updateModalCalculations()"><span class="text-orange-700 font-bold">Damaged</span></label>
+                            <label class="flex items-center gap-1"><input type="radio" name="status_${idx}" value="DAMAGED" onchange="updateModalCalculations()"><span class="text-orange-700 font-bold">Damage/Miss</span></label>
                         </div>
                     </div>`;
             });
@@ -609,7 +636,7 @@
             let enteredOtp = document.getElementById('deliveryOtpInput').value.trim();
 
             if(enteredOtp !== activeShipment.otp) {
-                alert("❌ Wrong OTP! Please enter correct WhatsApp OTP.");
+                alert("❌ Wrong OTP! Please check WhatsApp.");
                 return;
             }
 
@@ -622,7 +649,8 @@
 
             activeShipment.deliveredDateTime = getCurrentFormattedDateTime();
             activeShipment.receivedBundles = received;
-            activeShipment.damagedBundles = damaged;
+            activeShipment.damagedBundles = damaged; // combining damaged & missing for driver simplicity
+            activeShipment.missingBundles = []; 
             activeShipment.status = damaged.length > 0 ? 'DELIVERED_ISSUES' : 'DELIVERED_OK';
 
             saveAllData();
