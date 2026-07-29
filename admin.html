@@ -22,6 +22,7 @@
                 <p class="text-xs text-blue-200" id="headerSubtitle">Mobile Camera Audit, Product Breakdown & Net Delivery ERP</p>
             </div>
             <div class="flex items-center gap-2" id="roleSelectorBox">
+                <span id="syncStatus" class="text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse">☁️ Connecting Cloud...</span>
                 <select id="userRole" onchange="switchRole(this.value)" class="bg-blue-800 text-white text-xs p-2 rounded border border-blue-600 font-semibold cursor-pointer">
                     <option value="FACTORY">Factory Admin View (All Controls)</option>
                     <option value="STORE">🏭 Store Incharge View</option>
@@ -90,9 +91,7 @@
                             <th class="p-2 border text-center text-red-600">Missing</th>
                         </tr>
                     </thead>
-                    <tbody id="productSummaryBody">
-                        <!-- Javascript will fill this now -->
-                    </tbody>
+                    <tbody id="productSummaryBody"></tbody>
                 </table>
             </div>
         </div>
@@ -205,7 +204,7 @@
                             </tr>
                         </thead>
                         <tbody id="dispatchTableBody">
-                            <tr><td colspan="5" class="p-4 text-center text-gray-400">No shipments registered yet.</td></tr>
+                            <tr><td colspan="5" class="p-4 text-center text-gray-400">Loading Cloud Data...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -272,7 +271,9 @@
     </div>
 
     <script>
-        // Load persistent data from LocalStorage
+        // GOOGLE APPS SCRIPT DATABASE ENDPOINT URL
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQOyOuF3PRP2Q9H8a6VTBlAJSNc8fP4STXw_ByBqKAGRxK9j_FA5AR1yP328XUz9ae/exec";
+
         let productStock = JSON.parse(localStorage.getItem('ekvira_stock')) || {
             "Hydrogoal Inline Pipe": 200,
             "Rain Pipe": 150,
@@ -280,7 +281,7 @@
             "Submain Pipe": 100
         };
 
-        let shipments = JSON.parse(localStorage.getItem('ekvira_shipments')) || [];
+        let shipments = [];
         let currentScannedBundles = [];
         let activeShipment = null;
         let html5QrCode = null;
@@ -288,9 +289,8 @@
 
         const beepAudio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
 
-        function saveAllData() {
+        function saveLocalStock() {
             localStorage.setItem('ekvira_stock', JSON.stringify(productStock));
-            localStorage.setItem('ekvira_shipments', JSON.stringify(shipments));
         }
 
         function getCurrentFormattedDateTime() {
@@ -299,15 +299,48 @@
         }
 
         window.onload = function() {
+            fetchCloudShipments();
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('mode') === 'driver') {
                 switchRole('DRIVER');
-                document.getElementById('roleSelectorBox').classList.add('hidden'); // Hide dropdown for driver
-            } else {
-                updateStats();
-                renderTable();
+                document.getElementById('roleSelectorBox').classList.add('hidden');
             }
         };
+
+        // FETCH SHIPMENTS FROM GOOGLE SHEET CLOUD
+        function fetchCloudShipments() {
+            document.getElementById('syncStatus').innerText = "☁️ Syncing Cloud...";
+            fetch(GOOGLE_SCRIPT_URL)
+                .then(res => res.json())
+                .then(data => {
+                    shipments = data || [];
+                    updateStats();
+                    renderTable();
+                    document.getElementById('syncStatus').innerText = "✅ Cloud Connected";
+                    document.getElementById('syncStatus').className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('syncStatus').innerText = "⚠️ Offline Mode";
+                    document.getElementById('syncStatus').className = "text-[10px] bg-red-600 text-white font-bold px-2 py-1 rounded";
+                });
+        }
+
+        // SAVE / UPDATE TO GOOGLE SHEET
+        function syncToCloud(actionType, shipmentData) {
+            document.getElementById('syncStatus').innerText = "☁️ Saving to Cloud...";
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: actionType, shipment: shipmentData })
+            })
+            .then(res => res.json())
+            .then(() => {
+                document.getElementById('syncStatus').innerText = "✅ Saved to Sheet";
+                document.getElementById('syncStatus').className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
+                fetchCloudShipments();
+            })
+            .catch(err => console.error("Cloud Save Error:", err));
+        }
 
         function switchRole(role) {
             if(role === 'DRIVER') {
@@ -331,9 +364,6 @@
             renderTable();
         }
 
-        // ==========================================
-        // 🎯 FIX: UPDATE STATS & PRODUCT SUMMARY ROW RENDER LOGIC
-        // ==========================================
         function updateStats() {
             let filter = document.getElementById('globalProductFilter') ? document.getElementById('globalProductFilter').value : 'ALL';
             let totalStore = 0, totalDispatched = 0, totalTransit = 0, totalDelivered = 0, totalDamaged = 0, totalMissing = 0;
@@ -352,7 +382,6 @@
                 let catStore = productStock[cat] || 0;
                 let catDisp = 0, catTransit = 0, catDeliv = 0, catDamaged = 0, catMissing = 0;
 
-                // Calculate product specific stats from shipments
                 shipments.forEach(s => {
                     if(s.product === cat) {
                         let qty = s.dispatchedBundles.length;
@@ -360,14 +389,13 @@
                         if(s.status === 'IN_TRANSIT') {
                             catTransit += qty;
                         } else {
-                            catDeliv += s.receivedBundles.length;
-                            catDamaged += s.damagedBundles.length;
-                            catMissing += s.missingBundles.length;
+                            catDeliv += s.receivedBundles ? s.receivedBundles.length : 0;
+                            catDamaged += s.damagedBundles ? s.damagedBundles.length : 0;
+                            catMissing += s.missingBundles ? s.missingBundles.length : 0;
                         }
                     }
                 });
 
-                // Generate table row for Product Summary Table
                 if(summaryBody) {
                     summaryBody.innerHTML += `
                         <tr class="border-b hover:bg-gray-50">
@@ -382,7 +410,6 @@
                     `;
                 }
 
-                // Add to overall top stats based on filter
                 if(filter === 'ALL' || filter === cat) {
                     totalStore += catStore;
                     totalDispatched += catDisp;
@@ -393,7 +420,6 @@
                 }
             });
 
-            // Update Top Cards
             if(document.getElementById('statStoreStock')) document.getElementById('statStoreStock').innerText = totalStore + " Pcs";
             if(document.getElementById('statDispatched')) document.getElementById('statDispatched').innerText = totalDispatched + " Pcs";
             if(document.getElementById('statTransit')) document.getElementById('statTransit').innerText = totalTransit + " Pcs";
@@ -410,7 +436,7 @@
             if(qty <= 0) return;
 
             productStock[cat] = (productStock[cat] || 0) + qty;
-            saveAllData();
+            saveLocalStock();
             updateStats();
             alert(`✅ Stock Added!\nProduct: ${cat}\nQty: ${qty} Bundles`);
             document.getElementById('mfgInwardForm').reset();
@@ -480,13 +506,13 @@
             };
 
             productStock[category] = Math.max(0, (productStock[category] || 0) - shipment.dispatchedBundles.length);
-            shipments.unshift(shipment);
-            saveAllData();
+            saveLocalStock();
+
+            // SYNC TO GOOGLE SHEETS
+            syncToCloud("ADD", shipment);
 
             currentScannedBundles = [];
             renderScannedTags();
-            renderTable();
-            updateStats();
 
             triggerWhatsAppMessage(shipment);
 
@@ -498,8 +524,8 @@
 
         function triggerWhatsAppMessage(rec) {
             let isDelivered = rec.status !== 'IN_TRANSIT';
-            let netDeliveredQty = rec.receivedBundles.length;
-            let damagedQty = rec.damagedBundles.length + rec.missingBundles.length;
+            let netDeliveredQty = rec.receivedBundles ? rec.receivedBundles.length : 0;
+            let damagedQty = (rec.damagedBundles ? rec.damagedBundles.length : 0) + (rec.missingBundles ? rec.missingBundles.length : 0);
 
             let fullText = !isDelivered ? 
                 `*SHRI EKVIRA MFG COATS PVT LTD*\n*Dispatch & Security OTP*\n------------------------------------\n📅 Time: ${rec.dispatchDateTime}\nDear *${rec.dealerName}*,\n\nYour shipment of *${rec.product} (${rec.dispatchedBundles.length} Bundles)* dispatched via *${rec.vehicleNo}* (Driver: ${rec.driverName}).\n\n🔑 Verification OTP: *${rec.otp}*\n\nShare this OTP with driver after inspection.` :
@@ -521,12 +547,15 @@
             tbody.innerHTML = "";
 
             if(shipments.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">No shipments registered yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">No shipments registered in Cloud.</td></tr>`;
             } else {
                 shipments.forEach(s => {
                     let badge = s.status === 'IN_TRANSIT' ? `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">🚚 In-Transit</span>` : `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">✅ Delivered</span>`;
 
-                    let netDeliveredText = s.status === 'IN_TRANSIT' ? `<span class="text-amber-600 font-bold">Pending</span>` : `<b class="text-emerald-700 text-sm">${s.receivedBundles.length} Pcs</b>`;
+                    let recLen = s.receivedBundles ? s.receivedBundles.length : 0;
+                    let damLen = (s.damagedBundles ? s.damagedBundles.length : 0) + (s.missingBundles ? s.missingBundles.length : 0);
+
+                    let netDeliveredText = s.status === 'IN_TRANSIT' ? `<span class="text-amber-600 font-bold">Pending</span>` : `<b class="text-emerald-700 text-sm">${recLen} Pcs</b>`;
 
                     let action = s.status === 'IN_TRANSIT' ? `<button onclick="openDeliveryModal(${s.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded text-xs shadow flex items-center gap-1 mx-auto">📷 Audit & OTP</button>` : `<span class="text-gray-400 font-bold">Completed</span>`;
 
@@ -539,7 +568,7 @@
                             </td>
                             <td class="p-2 border text-center font-bold text-gray-800">${s.dispatchedBundles.length} Pcs</td>
                             <td class="p-2 border text-center bg-emerald-50">${netDeliveredText}</td>
-                            <td class="p-2 border text-center font-bold text-orange-600">${s.damagedBundles.length + s.missingBundles.length} Pcs</td>
+                            <td class="p-2 border text-center font-bold text-orange-600">${damLen} Pcs</td>
                             <td class="p-2 border text-center space-y-1">${badge}<br>${action}</td>
                         </tr>`;
                 });
@@ -547,7 +576,7 @@
         }
 
         function openDeliveryModal(id) {
-            activeShipment = shipments.find(s => s.id === id);
+            activeShipment = shipments.find(s => s.id == id);
             if(!activeShipment) return;
 
             document.getElementById('deliveryModalInfo').innerHTML = `
@@ -649,16 +678,16 @@
 
             activeShipment.deliveredDateTime = getCurrentFormattedDateTime();
             activeShipment.receivedBundles = received;
-            activeShipment.damagedBundles = damaged; // combining damaged & missing for driver simplicity
+            activeShipment.damagedBundles = damaged;
             activeShipment.missingBundles = []; 
             activeShipment.status = damaged.length > 0 ? 'DELIVERED_ISSUES' : 'DELIVERED_OK';
 
-            saveAllData();
-            renderTable();
-            updateStats();
+            // UPDATE CLOUD SHEET
+            syncToCloud("UPDATE", activeShipment);
+
             triggerWhatsAppMessage(activeShipment);
             closeDeliveryModal();
-            alert("✅ Delivery Successfully Recorded!");
+            alert("✅ Delivery Successfully Recorded & Synced!");
         }
 
         function exportExcel() {
