@@ -19,9 +19,9 @@
         <div class="bg-blue-900 text-white rounded-xl shadow-md p-4 flex justify-between items-center flex-wrap gap-2">
             <div>
                 <h2 class="text-xl sm:text-2xl font-bold">SHRI EKVIRA MFG COATS PVT. LTD.</h2>
-                <p class="text-xs text-blue-200">Mobile Camera Audit, Product Breakdown & Net Delivery ERP</p>
+                <p class="text-xs text-blue-200" id="headerSubtitle">Mobile Camera Audit, Product Breakdown & Net Delivery ERP</p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2" id="roleSelectorBox">
                 <select id="userRole" onchange="switchRole(this.value)" class="bg-blue-800 text-white text-xs p-2 rounded border border-blue-600 font-semibold cursor-pointer">
                     <option value="FACTORY">Factory Admin View (All Controls)</option>
                     <option value="STORE">🏭 Store Incharge View</option>
@@ -32,7 +32,6 @@
 
         <!-- GLOBAL PRODUCT FILTER & STATS DASHBOARD -->
         <div id="factoryStats" class="space-y-3">
-            <!-- Global Product Category Filter -->
             <div class="bg-white p-3 rounded-xl shadow flex justify-between items-center flex-wrap gap-3 border">
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-gray-700">🔍 Filter Dashboard by Product:</span>
@@ -44,7 +43,6 @@
                         <option value="Submain Pipe">Submain Pipe (Patta Pipe)</option>
                     </select>
                 </div>
-                <span class="text-[11px] text-gray-500 font-semibold">Live Stock Breakdown across all categories</span>
             </div>
 
             <!-- STATS CARDS -->
@@ -92,9 +90,7 @@
                             <th class="p-2 border text-center text-red-600">Missing</th>
                         </tr>
                     </thead>
-                    <tbody id="productSummaryBody">
-                        <!-- Dynamic Product Summary -->
-                    </tbody>
+                    <tbody id="productSummaryBody"></tbody>
                 </table>
             </div>
         </div>
@@ -102,12 +98,8 @@
         <!-- SECTION 1: PRODUCTION INWARD -->
         <div id="storeInwardCard" class="bg-indigo-900 text-white rounded-xl shadow p-4 border border-indigo-800">
             <div class="flex justify-between items-center border-b border-indigo-700 pb-2 mb-3">
-                <div>
-                    <h3 class="text-md font-bold flex items-center gap-2">🏭 Production to Store Inward Entry</h3>
-                    <p class="text-[11px] text-indigo-200">Add newly manufactured stock directly into Store Inventory</p>
-                </div>
+                <h3 class="text-md font-bold flex items-center gap-2">🏭 Production to Store Inward Entry</h3>
             </div>
-
             <form id="mfgInwardForm" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
                 <div>
                     <label class="block font-medium text-indigo-200">Product Category</label>
@@ -198,7 +190,7 @@
             <div id="shipmentsCard" class="bg-white rounded-xl shadow p-4 lg:col-span-2 border space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
                     <h3 class="text-md font-bold text-gray-800" id="tableTitle">📋 Live Dispatch Ledger & Net Delivery Audit</h3>
-                    <button onclick="exportExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-2.5 py-1 rounded font-medium shadow">Export Excel</button>
+                    <button id="excelBtn" onclick="exportExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-2.5 py-1 rounded font-medium shadow">Export Excel</button>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -223,13 +215,7 @@
 
         <!-- STORE AUDIT PANEL -->
         <div id="storeVerificationCard" class="bg-purple-900 text-white rounded-xl shadow p-4 border border-purple-800">
-            <div class="flex justify-between items-center border-b border-purple-700 pb-2 mb-3">
-                <div>
-                    <h3 class="text-md font-bold flex items-center gap-2">📦 Store Damaged & Missing Goods Audit</h3>
-                    <p class="text-[11px] text-purple-200">Verify damaged or missing bundles returned by driver with time stamp</p>
-                </div>
-            </div>
-            
+            <h3 class="text-md font-bold flex items-center gap-2 border-b border-purple-700 pb-2 mb-3">📦 Store Damaged & Missing Goods Audit</h3>
             <div class="overflow-x-auto">
                 <table class="w-full text-xs text-left text-purple-100">
                     <thead class="bg-purple-800 text-purple-200">
@@ -242,9 +228,7 @@
                             <th class="p-2 text-center">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="storeReturnTableBody">
-                        <tr><td colspan="6" class="p-3 text-center text-purple-300">No damaged or missing material reported yet.</td></tr>
-                    </tbody>
+                    <tbody id="storeReturnTableBody"></tbody>
                 </table>
             </div>
         </div>
@@ -269,8 +253,6 @@
                         📷 Open Mobile Camera
                     </button>
                 </div>
-                
-                <!-- Camera Video Box -->
                 <div id="cameraScannerBox" class="hidden border-2 border-blue-500 rounded overflow-hidden bg-black max-w-sm mx-auto">
                     <div id="reader" style="width: 100%;"></div>
                 </div>
@@ -288,12 +270,10 @@
                 </div>
             </div>
 
-            <!-- BUNDLE CONDITION CHECKLIST -->
+            <!-- BUNDLE CHECKLIST -->
             <div class="space-y-2">
                 <span class="text-xs font-bold text-gray-700">Bundle Status Checklist (Default All OK):</span>
-                <div id="bundleChecklist" class="max-h-48 overflow-y-auto border p-2 rounded space-y-2 text-xs bg-slate-50">
-                    <!-- Dynamic Bundle List -->
-                </div>
+                <div id="bundleChecklist" class="max-h-48 overflow-y-auto border p-2 rounded space-y-2 text-xs bg-slate-50"></div>
             </div>
 
             <div class="bg-amber-50 p-2.5 rounded border border-amber-200 space-y-2 text-xs">
@@ -312,35 +292,44 @@
     </div>
 
     <script>
-        // STORE INVENTORY INITIAL DATA (Category Wise)
-        let productStock = {
+        // Load persistent data from LocalStorage
+        let productStock = JSON.parse(localStorage.getItem('ekvira_stock')) || {
             "Hydrogoal Inline Pipe": 200,
             "Rain Pipe": 150,
             "Flat Inline Pipe": 100,
             "Submain Pipe": 100
         };
 
+        let shipments = JSON.parse(localStorage.getItem('ekvira_shipments')) || [];
         let currentScannedBundles = [];
-        let shipments = [];
         let activeShipment = null;
         let html5QrCode = null;
         let isCameraActive = false;
 
         const beepAudio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
 
-        function getCurrentFormattedDateTime() {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('en-GB'); 
-            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-            return `${dateStr} ${timeStr}`;
+        function saveAllData() {
+            localStorage.setItem('ekvira_stock', JSON.stringify(productStock));
+            localStorage.setItem('ekvira_shipments', JSON.stringify(shipments));
         }
 
-        // INITIAL LOAD
+        function getCurrentFormattedDateTime() {
+            const now = new Date();
+            return `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+        }
+
         window.onload = function() {
-            updateStats();
+            // Check if URL has ?mode=driver
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'driver') {
+                switchRole('DRIVER');
+                document.getElementById('roleSelectorBox').classList.add('hidden'); // Hide dropdown for driver security
+            } else {
+                updateStats();
+                renderTable();
+            }
         };
 
-        // ROLE SWITCHING
         function switchRole(role) {
             if(role === 'DRIVER') {
                 document.getElementById('storeInwardCard').classList.add('hidden');
@@ -348,22 +337,17 @@
                 document.getElementById('factoryStats').classList.add('hidden');
                 document.getElementById('productSummaryCard').classList.add('hidden');
                 document.getElementById('storeVerificationCard').classList.add('hidden');
+                document.getElementById('excelBtn').classList.add('hidden');
                 document.getElementById('shipmentsCard').className = "bg-white rounded-xl shadow p-4 lg:col-span-3 border";
                 document.getElementById('tableTitle').innerText = "🚚 Driver Mobile Portal - Deliveries & Camera Audit";
-            } else if(role === 'STORE') {
-                document.getElementById('storeInwardCard').classList.remove('hidden');
-                document.getElementById('dispatchFormCard').classList.add('hidden');
-                document.getElementById('factoryStats').classList.remove('hidden');
-                document.getElementById('productSummaryCard').classList.remove('hidden');
-                document.getElementById('storeVerificationCard').classList.remove('hidden');
-                document.getElementById('shipmentsCard').className = "bg-white rounded-xl shadow p-4 lg:col-span-3 border";
-                document.getElementById('tableTitle').innerText = "🏭 Store Portal - Live Stock & Theft Audit";
+                document.getElementById('headerSubtitle').innerText = "🚚 Driver Mobile View Mode";
             } else {
                 document.getElementById('storeInwardCard').classList.remove('hidden');
                 document.getElementById('dispatchFormCard').classList.remove('hidden');
                 document.getElementById('factoryStats').classList.remove('hidden');
                 document.getElementById('productSummaryCard').classList.remove('hidden');
                 document.getElementById('storeVerificationCard').classList.remove('hidden');
+                document.getElementById('excelBtn').classList.remove('hidden');
                 document.getElementById('shipmentsCard').className = "bg-white rounded-xl shadow p-4 lg:col-span-2 border";
                 document.getElementById('tableTitle').innerText = "📋 Live Dispatch Ledger & Net Delivery Audit";
             }
@@ -378,29 +362,22 @@
             if(qty <= 0) return;
 
             productStock[cat] = (productStock[cat] || 0) + qty;
+            saveAllData();
             updateStats();
             alert(`✅ Stock Added to Store Inventory!\nProduct: ${cat}\nQty Added: ${qty} Bundles`);
             document.getElementById('mfgInwardForm').reset();
         });
 
-        // BARCODE GUN SCANNER AT FACTORY DISPATCH
+        // BARCODE SCANNER AT FACTORY
         const gunInput = document.getElementById('gunBarcodeInput');
-        const feedback = document.getElementById('scanFeedback');
-
         gunInput.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 let val = this.value.trim().toUpperCase();
-
                 if (val !== "") {
-                    if (currentScannedBundles.includes(val)) {
-                        feedback.className = "text-[11px] font-bold text-red-600";
-                        feedback.innerText = `⚠️ Code [ ${val} ] Duplicate!`;
-                    } else {
+                    if (!currentScannedBundles.includes(val)) {
                         currentScannedBundles.push(val);
                         renderScannedTags();
-                        feedback.className = "text-[11px] font-bold text-emerald-600";
-                        feedback.innerText = `✅ [ ${val} ] Scanned!`;
                         try { beepAudio.play(); } catch(err){}
                     }
                 }
@@ -415,8 +392,7 @@
                 container.innerHTML += `
                     <span class="bg-blue-100 text-blue-900 text-[10px] font-mono font-bold px-2 py-1 rounded flex items-center gap-1">
                         ${b} <button onclick="removeBundle(${index})" class="text-red-500 font-bold hover:text-red-700">✕</button>
-                    </span>
-                `;
+                    </span>`;
             });
             document.getElementById('scanCount').innerText = `${currentScannedBundles.length} Bundles`;
         }
@@ -426,7 +402,6 @@
             renderScannedTags();
         }
 
-        // DISPATCH LOGIC
         function dispatchShipment() {
             let category = document.getElementById('prodCategory').value;
             let dealer = document.getElementById('dealerName').value.trim();
@@ -435,11 +410,9 @@
             let vehicle = document.getElementById('vehicleNo').value.trim().toUpperCase();
 
             if(!dealer || !phone || currentScannedBundles.length === 0) {
-                alert("कृपया Dealer details भरा आणि किमान १ Unique Bundle Barcode Gun ने Scan करा!");
+                alert("कृपया Dealer Details भरा आणि किमान १ Unique Bundle Scan करा!");
                 return;
             }
-
-            const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
             const shipment = {
                 id: Date.now(),
@@ -455,14 +428,15 @@
                 missingBundles: [],
                 status: 'IN_TRANSIT',
                 deliveredDateTime: '',
-                otp: otp,
+                otp: Math.floor(1000 + Math.random() * 9000).toString(),
                 storeVerified: false,
                 storeVerifiedTime: ''
             };
 
             productStock[category] = Math.max(0, (productStock[category] || 0) - shipment.dispatchedBundles.length);
-
             shipments.unshift(shipment);
+            saveAllData();
+
             currentScannedBundles = [];
             renderScannedTags();
             renderTable();
@@ -474,7 +448,6 @@
             document.getElementById('dealerPhone').value = '';
             document.getElementById('driverName').value = '';
             document.getElementById('vehicleNo').value = '';
-            feedback.innerText = '';
         }
 
         function triggerWhatsAppMessage(rec) {
@@ -482,45 +455,17 @@
             let netDeliveredQty = rec.receivedBundles.length;
             let damagedQty = rec.damagedBundles.length + rec.missingBundles.length;
 
-            let fullText = "";
-
-            if(!isDelivered) {
-                fullText = `*SHRI EKVIRA MFG COATS PVT LTD*\n` +
-                           `*Dispatch & Anti-Theft Security OTP*\n` +
-                           `------------------------------------\n` +
-                           `📅 Dispatch Time: ${rec.dispatchDateTime}\n` +
-                           `Dear *${rec.dealerName}*,\n\n` +
-                           `Your shipment of *${rec.product} (${rec.dispatchedBundles.length} Bundles)* has been dispatched via Vehicle *${rec.vehicleNo}* (Driver: ${rec.driverName}).\n\n` +
-                           `🔑 Delivery Verification OTP: *${rec.otp}*\n\n` +
-                           `Please inspect each bundle condition upon arrival and share this OTP with driver to confirm.`;
-            } else {
-                fullText = `*SHRI EKVIRA MFG COATS PVT LTD*\n` +
-                           `*Final Delivery Receipt & Audit*\n` +
-                           `------------------------------------\n` +
-                           `📅 Delivery Time: ${rec.deliveredDateTime}\n` +
-                           `Dear *${rec.dealerName}*,\n\n` +
-                           `Delivery Status for *${rec.product}*:\n` +
-                           `🚚 Total Dispatched: ${rec.dispatchedBundles.length} Pcs\n` +
-                           `✅ *Net Delivered OK: ${netDeliveredQty} Pcs*\n` +
-                           `💔 Damaged/Returned: ${damagedQty} Pcs\n\n` +
-                           `Thank you for your business!`;
-            }
+            let fullText = !isDelivered ? 
+                `*SHRI EKVIRA MFG COATS PVT LTD*\n*Dispatch & Anti-Theft Security OTP*\n------------------------------------\n📅 Dispatch Time: ${rec.dispatchDateTime}\nDear *${rec.dealerName}*,\n\nYour shipment of *${rec.product} (${rec.dispatchedBundles.length} Bundles)* has been dispatched via Vehicle *${rec.vehicleNo}* (Driver: ${rec.driverName}).\n\n🔑 Delivery Verification OTP: *${rec.otp}*\n\nPlease inspect each bundle and share this OTP with driver to confirm.` :
+                `*SHRI EKVIRA MFG COATS PVT LTD*\n*Final Delivery Receipt & Audit*\n------------------------------------\n📅 Delivery Time: ${rec.deliveredDateTime}\nDear *${rec.dealerName}*,\n\nDelivery Status for *${rec.product}*:\n🚚 Total Dispatched: ${rec.dispatchedBundles.length} Pcs\n✅ *Net Delivered OK: ${netDeliveredQty} Pcs*\n💔 Damaged/Returned: ${damagedQty} Pcs\n\nThank you!`;
 
             let phone = rec.dealerPhone.replace(/\D/g, '');
             if (phone.length === 10) phone = "91" + phone;
 
-            let encodedMsg = encodeURIComponent(fullText);
-            let isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-            let waUrl = isMobile ? `whatsapp://send?phone=${phone}&text=${encodedMsg}` : `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMsg}`;
-
+            let waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(fullText)}`;
             window.open(waUrl, '_blank');
         }
 
-        function resendWhatsAppOtp() {
-            if(activeShipment) triggerWhatsAppMessage(activeShipment);
-        }
-
-        // RENDER TABLES & BREAKDOWN
         function renderTable() {
             let tbody = document.getElementById('dispatchTableBody');
             tbody.innerHTML = "";
@@ -529,31 +474,11 @@
                 tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">No shipments registered yet.</td></tr>`;
             } else {
                 shipments.forEach(s => {
-                    let badge = "";
-                    if(s.status === 'IN_TRANSIT') {
-                        badge = `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">🚚 In-Transit</span>`;
-                    } else if(s.status === 'DELIVERED_OK') {
-                        badge = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">✅ 100% OK Delivered</span><br><span class="text-[9px] text-gray-500">📅 ${s.deliveredDateTime}</span>`;
-                    } else if(s.status === 'DELIVERED_ISSUES') {
-                        badge = `<span class="bg-orange-100 text-orange-800 text-[10px] font-bold px-2 py-0.5 rounded">⚠️ Issues Audit Complete</span><br><span class="text-[9px] text-gray-500">📅 ${s.deliveredDateTime}</span>`;
-                    }
+                    let badge = s.status === 'IN_TRANSIT' ? `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">🚚 In-Transit</span>` : `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">✅ Delivered</span>`;
 
-                    let auditInfo = "";
-                    if(s.damagedBundles.length > 0) {
-                        auditInfo += `<div class="bg-orange-50 text-orange-800 p-1 rounded font-mono text-[10px] border border-orange-200 mb-1"><b>💔 Damaged (${s.damagedBundles.length}):</b> ${s.damagedBundles.join(', ')}</div>`;
-                    }
-                    if(s.missingBundles.length > 0) {
-                        auditInfo += `<div class="bg-red-50 text-red-700 p-1 rounded font-mono text-[10px] border border-red-200"><b>❌ Missing (${s.missingBundles.length}):</b> ${s.missingBundles.join(', ')}</div>`;
-                    }
-                    if(!auditInfo) auditInfo = `<span class="text-gray-400 italic">0 Damaged</span>`;
+                    let netDeliveredText = s.status === 'IN_TRANSIT' ? `<span class="text-amber-600 font-bold">Pending Delivery</span>` : `<b class="text-emerald-700 text-sm">${s.receivedBundles.length} Pcs</b>`;
 
-                    let netDeliveredText = s.status === 'IN_TRANSIT' 
-                        ? `<span class="text-amber-600 font-bold">Pending Delivery</span>`
-                        : `<b class="text-emerald-700 text-sm">${s.receivedBundles.length} Pcs</b>`;
-
-                    let action = s.status === 'IN_TRANSIT'
-                        ? `<button onclick="openDeliveryModal(${s.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded text-xs shadow flex items-center gap-1">📷 Camera Audit & OTP</button>`
-                        : `<span class="text-gray-400 font-bold">Completed</span>`;
+                    let action = s.status === 'IN_TRANSIT' ? `<button onclick="openDeliveryModal(${s.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded text-xs shadow flex items-center gap-1 mx-auto">📷 Camera Audit & OTP</button>` : `<span class="text-gray-400 font-bold">Completed</span>`;
 
                     tbody.innerHTML += `
                         <tr class="border-b hover:bg-gray-50">
@@ -564,145 +489,46 @@
                             </td>
                             <td class="p-2 border text-center font-bold text-gray-800">${s.dispatchedBundles.length} Pcs</td>
                             <td class="p-2 border text-center bg-emerald-50">${netDeliveredText}</td>
-                            <td class="p-2 border text-center">${auditInfo}</td>
+                            <td class="p-2 border text-center font-bold text-orange-600">${s.damagedBundles.length + s.missingBundles.length} Pcs</td>
                             <td class="p-2 border text-center space-y-1">${badge}<br>${action}</td>
-                        </tr>
-                    `;
-                });
-            }
-
-            renderStoreReturnTable();
-        }
-
-        function renderStoreReturnTable() {
-            let tbody = document.getElementById('storeReturnTableBody');
-            tbody.innerHTML = "";
-
-            let problemShipments = shipments.filter(s => s.missingBundles.length > 0 || s.damagedBundles.length > 0);
-
-            if(problemShipments.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-center text-purple-300">No damaged or missing material reported yet.</td></tr>`;
-            } else {
-                problemShipments.forEach(s => {
-                    let statusTag = !s.storeVerified
-                        ? `<span class="bg-amber-400 text-black font-bold px-2 py-0.5 rounded text-[10px] animate-pulse">🚚 Driver Audit Pending</span>`
-                        : `<span class="bg-emerald-400 text-black font-bold px-2 py-0.5 rounded text-[10px]">✅ Store Verified</span><br><span class="text-[9px] text-purple-200">📅 ${s.storeVerifiedTime}</span>`;
-
-                    let actionBtn = !s.storeVerified
-                        ? `<button onclick="confirmStoreAudit(${s.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-2.5 py-1 rounded text-xs shadow">Confirm Store Audit</button>`
-                        : `<span class="text-emerald-300 font-bold">Audited ✅</span>`;
-
-                    tbody.innerHTML += `
-                        <tr class="border-b border-purple-800 text-xs">
-                            <td class="p-2"><b>${s.driverName}</b><br><span class="text-purple-300">${s.vehicleNo}</span></td>
-                            <td class="p-2">${s.dealerName}</td>
-                            <td class="p-2 text-center font-mono font-bold text-orange-300">${s.damagedBundles.length > 0 ? s.damagedBundles.join(', ') : 'None'}</td>
-                            <td class="p-2 text-center font-mono font-bold text-red-300">${s.missingBundles.length > 0 ? s.missingBundles.join(', ') : 'None'}</td>
-                            <td class="p-2 text-center">${statusTag}</td>
-                            <td class="p-2 text-center">${actionBtn}</td>
-                        </tr>
-                    `;
+                        </tr>`;
                 });
             }
         }
 
-        function confirmStoreAudit(id) {
-            let item = shipments.find(s => s.id === id);
-            if(item) {
-                if(confirm(`Confirm Store Audit for driver ${item.driverName}?`)) {
-                    item.storeVerified = true;
-                    item.storeVerifiedTime = getCurrentFormattedDateTime();
-                    updateStats();
-                    renderTable();
-                    alert(`✅ Audit Confirmed at ${item.storeVerifiedTime}`);
-                }
-            }
-        }
-
-        // UPDATE DASHBOARD STATS & PRODUCT BREAKDOWN
         function updateStats() {
-            let filterCat = document.getElementById('globalProductFilter').value;
-
             let totalStore = 0, totalDispatched = 0, totalTransit = 0, totalDelivered = 0, totalDamaged = 0, totalMissing = 0;
 
-            // Compute Stats based on filter
-            Object.keys(productStock).forEach(cat => {
-                if(filterCat === 'ALL' || filterCat === cat) {
-                    totalStore += productStock[cat];
-                }
-            });
+            Object.keys(productStock).forEach(cat => totalStore += productStock[cat]);
 
             shipments.forEach(s => {
-                if(filterCat === 'ALL' || filterCat === s.product) {
-                    totalDispatched += s.dispatchedBundles.length;
-                    if(s.status === 'IN_TRANSIT') {
-                        totalTransit += s.dispatchedBundles.length;
-                    } else {
-                        totalDelivered += s.receivedBundles.length;
-                        totalDamaged += s.damagedBundles.length;
-                        totalMissing += s.missingBundles.length;
-                    }
+                totalDispatched += s.dispatchedBundles.length;
+                if(s.status === 'IN_TRANSIT') totalTransit += s.dispatchedBundles.length;
+                else {
+                    totalDelivered += s.receivedBundles.length;
+                    totalDamaged += s.damagedBundles.length;
+                    totalMissing += s.missingBundles.length;
                 }
             });
 
-            document.getElementById('statStoreStock').innerText = totalStore.toLocaleString() + " Pcs";
-            document.getElementById('statDispatched').innerText = totalDispatched.toLocaleString() + " Pcs";
-            document.getElementById('statTransit').innerText = totalTransit.toLocaleString() + " Pcs";
-            document.getElementById('statDelivered').innerText = totalDelivered.toLocaleString() + " Pcs";
-            document.getElementById('statDamaged').innerText = totalDamaged.toLocaleString() + " Pcs";
-            document.getElementById('statMissing').innerText = totalMissing.toLocaleString() + " Pcs";
-
-            renderProductSummaryTable();
+            document.getElementById('statStoreStock').innerText = totalStore + " Pcs";
+            document.getElementById('statDispatched').innerText = totalDispatched + " Pcs";
+            document.getElementById('statTransit').innerText = totalTransit + " Pcs";
+            document.getElementById('statDelivered').innerText = totalDelivered + " Pcs";
+            document.getElementById('statDamaged').innerText = totalDamaged + " Pcs";
+            document.getElementById('statMissing').innerText = totalMissing + " Pcs";
         }
 
-        function renderProductSummaryTable() {
-            let tbody = document.getElementById('productSummaryBody');
-            tbody.innerHTML = "";
-
-            let categories = ["Hydrogoal Inline Pipe", "Rain Pipe", "Flat Inline Pipe", "Submain Pipe"];
-
-            categories.forEach(cat => {
-                let stStock = productStock[cat] || 0;
-                let dispatched = 0, transit = 0, delivered = 0, damaged = 0, missing = 0;
-
-                shipments.filter(s => s.product === cat).forEach(s => {
-                    dispatched += s.dispatchedBundles.length;
-                    if(s.status === 'IN_TRANSIT') transit += s.dispatchedBundles.length;
-                    else {
-                        delivered += s.receivedBundles.length;
-                        damaged += s.damagedBundles.length;
-                        missing += s.missingBundles.length;
-                    }
-                });
-
-                tbody.innerHTML += `
-                    <tr class="border-b hover:bg-slate-50 font-semibold">
-                        <td class="p-2 border text-gray-800">${cat}</td>
-                        <td class="p-2 border text-center text-indigo-700 font-bold">${stStock} Pcs</td>
-                        <td class="p-2 border text-center text-gray-700">${dispatched} Pcs</td>
-                        <td class="p-2 border text-center text-amber-600">${transit} Pcs</td>
-                        <td class="p-2 border text-center text-emerald-600 font-bold">${delivered} Pcs</td>
-                        <td class="p-2 border text-center text-orange-600">${damaged} Pcs</td>
-                        <td class="p-2 border text-center text-red-600">${missing} Pcs</td>
-                    </tr>
-                `;
-            });
-        }
-
-        // DELIVERY MODAL & CAMERA AUDIT LOGIC
         function openDeliveryModal(id) {
             activeShipment = shipments.find(s => s.id === id);
             if(!activeShipment) return;
 
             document.getElementById('deliveryModalInfo').innerHTML = `
-                <p><b>Dispatch Date:</b> 📅 ${activeShipment.dispatchDateTime}</p>
                 <p><b>Dealer:</b> ${activeShipment.dealerName} | <b>Driver:</b> ${activeShipment.driverName} (${activeShipment.vehicleNo})</p>
-                <p><b>Product:</b> ${activeShipment.product}</p>
-            `;
+                <p><b>Product:</b> ${activeShipment.product}</p>`;
 
             renderChecklist();
             updateModalCalculations();
-
             document.getElementById('deliveryOtpInput').value = "";
             document.getElementById('deliveryModal').classList.remove('hidden');
         }
@@ -710,51 +536,31 @@
         function renderChecklist() {
             let checklist = document.getElementById('bundleChecklist');
             checklist.innerHTML = "";
-
             activeShipment.dispatchedBundles.forEach((bCode, idx) => {
                 checklist.innerHTML += `
-                    <div id="bundleRow_${bCode}" class="flex items-center justify-between p-2 bg-white rounded border border-gray-200">
+                    <div id="bundleRow_${bCode}" class="flex items-center justify-between p-2 bg-white rounded border">
                         <span class="font-mono font-bold text-gray-800">${bCode}</span>
                         <div class="flex items-center gap-3 text-xs">
-                            <label class="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="status_${idx}" value="OK" checked onchange="updateModalCalculations()" class="text-emerald-600">
-                                <span class="text-emerald-700 font-bold">✅ OK</span>
-                            </label>
-                            <label class="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="status_${idx}" value="DAMAGED" onchange="updateModalCalculations()" class="text-orange-600">
-                                <span class="text-orange-700 font-bold">💔 Damaged</span>
-                            </label>
-                            <label class="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="status_${idx}" value="MISSING" onchange="updateModalCalculations()" class="text-red-600">
-                                <span class="text-red-700 font-bold">❌ Missing</span>
-                            </label>
+                            <label class="flex items-center gap-1"><input type="radio" name="status_${idx}" value="OK" checked onchange="updateModalCalculations()"><span class="text-emerald-700 font-bold">OK</span></label>
+                            <label class="flex items-center gap-1"><input type="radio" name="status_${idx}" value="DAMAGED" onchange="updateModalCalculations()"><span class="text-orange-700 font-bold">Damaged</span></label>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
 
         function updateModalCalculations() {
             if(!activeShipment) return;
-
-            let totalDispatched = activeShipment.dispatchedBundles.length;
-            let issuesCount = 0;
-
+            let total = activeShipment.dispatchedBundles.length;
+            let issues = 0;
             activeShipment.dispatchedBundles.forEach((bCode, idx) => {
-                let selectedRadio = document.querySelector(`input[name="status_${idx}"]:checked`);
-                let val = selectedRadio ? selectedRadio.value : 'OK';
-
-                if(val !== 'OK') issuesCount++;
+                let radio = document.querySelector(`input[name="status_${idx}"]:checked`);
+                if(radio && radio.value !== 'OK') issues++;
             });
-
-            let netDelivered = totalDispatched - issuesCount;
-
-            document.getElementById('calcDispatched').innerText = `${totalDispatched} Pcs`;
-            document.getElementById('calcIssues').innerText = `${issuesCount} Pcs`;
-            document.getElementById('calcNetDelivered').innerText = `${netDelivered} Pcs OK`;
+            document.getElementById('calcDispatched').innerText = total + " Pcs";
+            document.getElementById('calcIssues').innerText = issues + " Pcs";
+            document.getElementById('calcNetDelivered').innerText = (total - issues) + " Pcs OK";
         }
 
-        // TOGGLE MOBILE CAMERA SCANNER FOR DRIVER
         function toggleCameraScanner() {
             let camBox = document.getElementById('cameraScannerBox');
             let btn = document.getElementById('toggleCamBtn');
@@ -762,43 +568,22 @@
             if (!isCameraActive) {
                 camBox.classList.remove('hidden');
                 btn.innerText = "✕ Stop Camera";
-                btn.className = "bg-red-600 hover:bg-red-700 text-white text-[11px] px-2.5 py-1 rounded font-bold";
+                btn.className = "bg-red-600 text-white text-[11px] px-2.5 py-1 rounded font-bold";
 
                 html5QrCode = new Html5Qrcode("reader");
                 html5QrCode.start(
-                    { facingMode: "environment" }, // Back Camera
+                    { facingMode: "environment" },
                     { fps: 10, qrbox: { width: 250, height: 150 } },
                     (decodedText) => {
-                        // On Scan Success
                         let scannedCode = decodedText.trim().toUpperCase();
                         let index = activeShipment.dispatchedBundles.indexOf(scannedCode);
-
                         if (index !== -1) {
-                            let damagedRadio = document.querySelector(`input[name="status_${index}"][value="DAMAGED"]`);
-                            if (damagedRadio) {
-                                damagedRadio.checked = true;
-                                updateModalCalculations();
-
-                                // Highlight Row
-                                let row = document.getElementById(`bundleRow_${scannedCode}`);
-                                if(row) {
-                                    row.className = "flex items-center justify-between p-2 bg-orange-100 rounded border-2 border-orange-500 animate-pulse";
-                                }
-
-                                try { beepAudio.play(); } catch(e){}
-                            }
-                        } else {
-                            alert(`⚠️ Scanned Barcode [${scannedCode}] does not belong to this shipment!`);
+                            let radio = document.querySelector(`input[name="status_${index}"][value="DAMAGED"]`);
+                            if(radio) { radio.checked = true; updateModalCalculations(); try { beepAudio.play(); } catch(e){} }
                         }
                     },
-                    (errorMessage) => {
-                        // Scan Errors ignored for smooth continuous scanning
-                    }
-                ).catch(err => {
-                    alert("Camera access denied or error: " + err);
-                    toggleCameraScanner();
-                });
-
+                    (err) => {}
+                );
                 isCameraActive = true;
             } else {
                 if(html5QrCode) {
@@ -806,7 +591,7 @@
                         html5QrCode.clear();
                         camBox.classList.add('hidden');
                         btn.innerText = "📷 Open Mobile Camera";
-                        btn.className = "bg-blue-600 hover:bg-blue-700 text-white text-[11px] px-2.5 py-1 rounded font-bold";
+                        btn.className = "bg-blue-600 text-white text-[11px] px-2.5 py-1 rounded font-bold";
                         isCameraActive = false;
                     });
                 }
@@ -824,48 +609,33 @@
             let enteredOtp = document.getElementById('deliveryOtpInput').value.trim();
 
             if(enteredOtp !== activeShipment.otp) {
-                alert("❌ Galat OTP! Please enter correct Dealer WhatsApp OTP.");
+                alert("❌ Wrong OTP! Please enter correct WhatsApp OTP.");
                 return;
             }
 
-            let received = [];
-            let damaged = [];
-            let missing = [];
-
+            let received = [], damaged = [];
             activeShipment.dispatchedBundles.forEach((bCode, idx) => {
-                let selectedRadio = document.querySelector(`input[name="status_${idx}"]:checked`);
-                let val = selectedRadio ? selectedRadio.value : 'OK';
-
-                if(val === 'OK') received.push(bCode);
-                else if(val === 'DAMAGED') damaged.push(bCode);
-                else if(val === 'MISSING') missing.push(bCode);
+                let radio = document.querySelector(`input[name="status_${idx}"]:checked`);
+                if(radio.value === 'OK') received.push(bCode);
+                else damaged.push(bCode);
             });
 
             activeShipment.deliveredDateTime = getCurrentFormattedDateTime();
             activeShipment.receivedBundles = received;
             activeShipment.damagedBundles = damaged;
-            activeShipment.missingBundles = missing;
+            activeShipment.status = damaged.length > 0 ? 'DELIVERED_ISSUES' : 'DELIVERED_OK';
 
-            if(damaged.length > 0 || missing.length > 0) {
-                activeShipment.status = 'DELIVERED_ISSUES';
-            } else {
-                activeShipment.status = 'DELIVERED_OK';
-            }
-
+            saveAllData();
             renderTable();
             updateStats();
-
-            // Send Final Delivery Confirmation WhatsApp Receipt
             triggerWhatsAppMessage(activeShipment);
-
             closeDeliveryModal();
-
-            alert(`✅ Delivery Confirmed & Audit Saved!\n\nDispatched: ${activeShipment.dispatchedBundles.length} Pcs\nNet Delivered OK: ${received.length} Pcs\nDamaged/Missing: ${damaged.length + missing.length} Pcs\n\nWhatsApp Final Receipt Sent to Dealer.`);
+            alert("✅ Delivery Successfully Recorded!");
         }
 
         function exportExcel() {
-            let wb = XLSX.utils.table_to_book(document.getElementById("recordsTable"), {sheet: "Dispatch Ledger"});
-            XLSX.writeFile(wb, `SHRI_EKVIRA_INVENTORY_${new Date().toISOString().slice(0,10)}.xlsx`);
+            let wb = XLSX.utils.table_to_book(document.getElementById("recordsTable"), {sheet: "Ledger"});
+            XLSX.writeFile(wb, `EKVIRA_ERP_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
     </script>
 </body>
