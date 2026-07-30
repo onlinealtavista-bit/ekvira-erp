@@ -16,12 +16,12 @@
         <div class="bg-blue-900 text-white rounded-xl shadow-md p-4 flex justify-between items-center flex-wrap gap-2">
             <div>
                 <h2 class="text-xl sm:text-2xl font-bold">SHRI EKVIRA MFG COATS PVT. LTD.</h2>
-                <p class="text-xs text-blue-200" id="headerSubtitle">Mobile Camera Audit, Product Breakdown & Net Delivery ERP</p>
+                <p class="text-xs text-blue-200" id="headerSubtitle">Mobile Camera Audit & Net Delivery ERP</p>
             </div>
             <div class="flex items-center gap-2 flex-wrap" id="roleSelectorBox">
-                <span id="syncStatus" class="text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse">☁️ Connecting Cloud...</span>
+                <span id="syncStatus" class="text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse">☁️ Connecting...</span>
                 
-                <button onclick="clearAllDemoData()" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3 py-1.5 rounded shadow flex items-center gap-1">
+                <button id="resetDemoBtn" onclick="clearAllDemoData()" class="admin-only bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3 py-1.5 rounded shadow flex items-center gap-1">
                     🗑️ Reset All Demo Data
                 </button>
 
@@ -33,8 +33,8 @@
             </div>
         </div>
 
-        <!-- GLOBAL PRODUCT FILTER & STATS DASHBOARD -->
-        <div id="factoryStats" class="space-y-3">
+        <!-- FACTORY ADMIN ONLY: GLOBAL PRODUCT FILTER & STATS DASHBOARD -->
+        <div id="factoryStats" class="admin-only space-y-3">
             <div class="bg-white p-3 rounded-xl shadow flex justify-between items-center flex-wrap gap-3 border">
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-gray-700">🔍 Filter Dashboard by Product:</span>
@@ -77,8 +77,8 @@
             </div>
         </div>
 
-        <!-- PRODUCT WISE INVENTORY SUMMARY TABLE -->
-        <div id="productSummaryCard" class="bg-white rounded-xl shadow p-4 border space-y-2">
+        <!-- FACTORY ADMIN ONLY: PRODUCT WISE INVENTORY SUMMARY TABLE -->
+        <div id="productSummaryCard" class="admin-only bg-white rounded-xl shadow p-4 border space-y-2">
             <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider bg-blue-100 text-blue-900 inline-block px-2 py-1 rounded">📊 PRODUCT-WISE STOCK & TRANSIT SUMMARY</h3>
             <div class="overflow-x-auto mt-2">
                 <table class="w-full text-xs text-left border">
@@ -98,8 +98,8 @@
             </div>
         </div>
 
-        <!-- SECTION 1: PRODUCTION INWARD & STOCK EDIT PANEL -->
-        <div id="storeInwardCard" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- FACTORY ADMIN ONLY: PRODUCTION INWARD & STOCK EDIT PANEL -->
+        <div id="storeInwardCard" class="admin-only grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-indigo-900 text-white rounded-xl shadow p-4 border border-indigo-800 md:col-span-2">
                 <div class="flex justify-between items-center border-b border-indigo-700 pb-2 mb-3">
                     <h3 class="text-md font-bold flex items-center gap-2">🏭 Production to Store Inward Entry</h3>
@@ -154,8 +154,8 @@
             </div>
         </div>
 
-        <!-- FACTORY RETURNED DAMAGED BUNDLE VERIFICATION -->
-        <div id="factoryReturnCard" class="bg-orange-900 text-white rounded-xl shadow p-4 border border-orange-800 space-y-3">
+        <!-- FACTORY ADMIN ONLY: FACTORY RETURNED DAMAGED BUNDLE VERIFICATION -->
+        <div id="factoryReturnCard" class="admin-only bg-orange-900 text-white rounded-xl shadow p-4 border border-orange-800 space-y-3">
             <div class="flex justify-between items-center border-b border-orange-700 pb-2">
                 <h3 class="text-md font-bold flex items-center gap-2">📦 Factory Return Verification & Damaged Stock Re-Inward</h3>
                 <span class="text-xs bg-orange-700 text-orange-100 px-2 py-0.5 rounded font-mono" id="pendingReturnBadge">0 Pending Verification</span>
@@ -165,11 +165,11 @@
             </div>
         </div>
 
-        <!-- WORKSPACE: DISPATCH FORM & LEDGER -->
+        <!-- WORKSPACE AREA -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <!-- DISPATCH FORM -->
-            <div id="dispatchFormCard" class="bg-white rounded-xl shadow p-4 border lg:col-span-1 space-y-3">
+            <!-- STORE/FACTORY DISPATCH FORM -->
+            <div id="dispatchFormCard" class="admin-only bg-white rounded-xl shadow p-4 border lg:col-span-1 space-y-3">
                 <h3 class="text-md font-bold text-blue-900 border-b pb-2">🚚 Dispatch Entry & Scan</h3>
 
                 <div>
@@ -210,7 +210,7 @@
                         <span id="scanCount" class="text-xs font-bold bg-blue-900 text-white px-2 py-0.5 rounded">0 Bundles</span>
                     </div>
 
-                    <input type="text" id="gunBarcodeInput" placeholder="🔫 Scan Bundle Barcode Here..." class="w-full border-2 border-amber-500 rounded p-2.5 text-sm font-mono font-bold uppercase bg-white focus:outline-none focus:ring-2 focus:ring-amber-600 shadow-inner" autofocus>
+                    <input type="text" id="gunBarcodeInput" placeholder="🔫 Scan Bundle Barcode Here..." class="w-full border-2 border-amber-500 rounded p-2.5 text-sm font-mono font-bold uppercase bg-white focus:outline-none focus:ring-2 focus:ring-amber-600 shadow-inner">
 
                     <div class="border-t border-amber-200 pt-2 mt-2">
                         <span class="text-[10px] text-gray-500 font-bold block mb-1">Scanned Bundle IDs:</span>
@@ -223,11 +223,11 @@
                 </button>
             </div>
 
-            <!-- SHIPMENT LEDGER -->
-            <div id="shipmentsCard" class="bg-white rounded-xl shadow p-4 lg:col-span-2 border space-y-4">
+            <!-- SHIPMENT LEDGER (VISIBLE TO DRIVER TOO) -->
+            <div id="shipmentsCard" class="bg-white rounded-xl shadow p-4 lg:col-span-3 border space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
-                    <h3 class="text-md font-bold text-gray-800" id="tableTitle">📋 Live Dispatch Ledger & Net Delivery Audit</h3>
-                    <button id="excelBtn" onclick="exportExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-2.5 py-1 rounded font-medium shadow">Export Excel</button>
+                    <h3 class="text-md font-bold text-gray-800" id="tableTitle">📋 Delivery Audit & Dispatch Ledger</h3>
+                    <button id="excelBtn" onclick="exportExcel()" class="admin-only bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-2.5 py-1 rounded font-medium shadow">Export Excel</button>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -324,6 +324,35 @@
 
         const beepAudio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
 
+        window.onload = function() {
+            // Check URL parameters for mode=driver
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+            if (mode === 'driver') {
+                document.getElementById('userRole').value = 'DRIVER';
+            }
+            switchRole(document.getElementById('userRole').value);
+            fetchCloudShipments();
+        };
+
+        function switchRole(role) {
+            activeRole = role;
+            const adminElements = document.querySelectorAll('.admin-only');
+            const dispatchCard = document.getElementById('dispatchFormCard');
+            const shipmentsCard = document.getElementById('shipmentsCard');
+
+            if (role === 'DRIVER') {
+                adminElements.forEach(el => el.classList.add('hidden'));
+                shipmentsCard.classList.remove('lg:col-span-2');
+                shipmentsCard.classList.add('lg:col-span-3');
+            } else {
+                adminElements.forEach(el => el.classList.remove('hidden'));
+                shipmentsCard.classList.remove('lg:col-span-3');
+                shipmentsCard.classList.add('lg:col-span-2');
+            }
+            renderTable();
+        }
+
         function saveLocalStock() {
             localStorage.setItem('ekvira_stock', JSON.stringify(productStock));
         }
@@ -332,10 +361,6 @@
             const now = new Date();
             return `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`;
         }
-
-        window.onload = function() {
-            fetchCloudShipments();
-        };
 
         function fetchCloudShipments() {
             document.getElementById('syncStatus').innerText = "☁️ Syncing Cloud...";
@@ -371,9 +396,8 @@
             .catch(err => console.error("Cloud Save Error:", err));
         }
 
-        // FULL DEMO RESET FUNCTION
         function clearAllDemoData() {
-            if(confirm("⚠️ नक्की सर्व Demo Entries Google Sheet मधून हटवायच्या आहेत का?\n\nयामुळे Dispatched, Transit, Delivered आणि Damaged सर्व ० (Zero) होईल!")) {
+            if(confirm("⚠️ नक्की सर्व Demo Entries Google Sheet मधून हटवायच्या आहेत का?")) {
                 document.getElementById('syncStatus').innerText = "🗑️ Clearing Google Sheet...";
                 fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
@@ -392,14 +416,12 @@
             }
         }
 
-        // DELETE SINGLE SHIPMENT (HUMAN ERROR CORRECTION)
         function deleteShipment(id) {
             if(confirm("⚠️ ही चुकीची एंट्री खरोखर डिलीट करायची आहे का?")) {
                 syncToCloud("DELETE", null, id);
             }
         }
 
-        // MANUAL STOCK EDIT FUNCTION
         function applyStockEdit() {
             let cat = document.getElementById('editStockCategory').value;
             let qty = parseInt(document.getElementById('editStockQty').value);
@@ -414,11 +436,6 @@
             updateStats();
             document.getElementById('editStockQty').value = "";
             alert(`✅ ${cat} चा स्टॉक आता ${qty} Pcs वर सेट झाला आहे!`);
-        }
-
-        function switchRole(role) {
-            activeRole = role;
-            renderTable();
         }
 
         function updateStats() {
@@ -499,23 +516,26 @@
         });
 
         const gunInput = document.getElementById('gunBarcodeInput');
-        gunInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                let val = this.value.trim().toUpperCase();
-                if (val !== "") {
-                    if (!currentScannedBundles.includes(val)) {
-                        currentScannedBundles.push(val);
-                        renderScannedTags();
-                        try { beepAudio.play(); } catch(err){}
+        if(gunInput) {
+            gunInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    let val = this.value.trim().toUpperCase();
+                    if (val !== "") {
+                        if (!currentScannedBundles.includes(val)) {
+                            currentScannedBundles.push(val);
+                            renderScannedTags();
+                            try { beepAudio.play(); } catch(err){}
+                        }
                     }
+                    this.value = ""; 
                 }
-                this.value = ""; 
-            }
-        });
+            });
+        }
 
         function renderScannedTags() {
             let container = document.getElementById('scannedBundleTags');
+            if(!container) return;
             container.innerHTML = "";
             currentScannedBundles.forEach((b, index) => {
                 container.innerHTML += `
@@ -580,6 +600,7 @@
 
         function renderTable() {
             let tbody = document.getElementById('dispatchTableBody');
+            if(!tbody) return;
             tbody.innerHTML = "";
 
             if(shipments.length === 0) {
@@ -593,10 +614,10 @@
                     : `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">🚚 In-Transit</span>`;
 
                 let actionBtn = s.status === 'IN_TRANSIT'
-                    ? `<button onclick="openDeliveryModal(${s.id})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-2 py-1 rounded shadow">📲 Delivery Audit</button>`
+                    ? `<button onclick="openDeliveryModal(${s.id})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-2.5 py-1 rounded shadow">📲 Delivery Audit</button>`
                     : `<span class="text-[10px] text-gray-500 font-mono">${s.deliveredDateTime || 'Verified'}</span>`;
 
-                let deleteBtn = `<button onclick="deleteShipment(${s.id})" class="text-red-500 hover:text-red-700 font-bold ml-2 text-xs" title="Delete Entry">🗑️</button>`;
+                let deleteBtn = activeRole === 'DRIVER' ? '' : `<button onclick="deleteShipment(${s.id})" class="text-red-500 hover:text-red-700 font-bold ml-2 text-xs" title="Delete Entry">🗑️</button>`;
 
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-slate-50">
@@ -622,6 +643,8 @@
         function renderFactoryReturns() {
             let container = document.getElementById('factoryReturnList');
             let badge = document.getElementById('pendingReturnBadge');
+            if(!container || !badge) return;
+
             let pendingReturns = shipments.filter(s => s.status === 'DELIVERED' && s.damagedBundles && s.damagedBundles.length > 0 && !s.returnVerified);
 
             badge.innerText = `${pendingReturns.length} Pending Verification`;
