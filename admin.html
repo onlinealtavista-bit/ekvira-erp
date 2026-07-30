@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHRI EKVIRA MFG - Complete Anti-Theft & Camera Audit ERP</title>
-    <!-- Tailwind CSS -->
+    <title>SHRI EKVIRA MFG - ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS for Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- HTML5 QR/Barcode Camera Scanner Library -->
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body class="bg-slate-100 p-2 sm:p-6 font-sans">
@@ -24,7 +21,6 @@
             <div class="flex items-center gap-2 flex-wrap" id="roleSelectorBox">
                 <span id="syncStatus" class="text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse">☁️ Connecting Cloud...</span>
                 
-                <!-- CLEAR ALL DEMO DATA BUTTON -->
                 <button onclick="clearAllDemoData()" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3 py-1.5 rounded shadow flex items-center gap-1">
                     🗑️ Reset All Demo Data
                 </button>
@@ -81,7 +77,7 @@
             </div>
         </div>
 
-        <!-- PRODUCT WISE INVENTORY BREAKDOWN TABLE -->
+        <!-- PRODUCT WISE INVENTORY SUMMARY TABLE -->
         <div id="productSummaryCard" class="bg-white rounded-xl shadow p-4 border space-y-2">
             <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider bg-blue-100 text-blue-900 inline-block px-2 py-1 rounded">📊 PRODUCT-WISE STOCK & TRANSIT SUMMARY</h3>
             <div class="overflow-x-auto mt-2">
@@ -104,8 +100,6 @@
 
         <!-- SECTION 1: PRODUCTION INWARD & STOCK EDIT PANEL -->
         <div id="storeInwardCard" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            
-            <!-- INWARD FORM -->
             <div class="bg-indigo-900 text-white rounded-xl shadow p-4 border border-indigo-800 md:col-span-2">
                 <div class="flex justify-between items-center border-b border-indigo-700 pb-2 mb-3">
                     <h3 class="text-md font-bold flex items-center gap-2">🏭 Production to Store Inward Entry</h3>
@@ -151,14 +145,13 @@
                     </div>
                     <div>
                         <label class="block text-gray-300">Set Exact Stock Qty:</label>
-                        <input type="number" id="editStockQty" placeholder="e.g. 150" class="w-full border rounded p-1.5 text-black font-bold">
+                        <input type="number" id="editStockQty" placeholder="e.g. 0" class="w-full border rounded p-1.5 text-black font-bold">
                     </div>
                     <button onclick="applyStockEdit()" class="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold py-1.5 rounded text-xs shadow">
                         💾 Update Stock
                     </button>
                 </div>
             </div>
-
         </div>
 
         <!-- FACTORY RETURNED DAMAGED BUNDLE VERIFICATION -->
@@ -175,7 +168,7 @@
         <!-- WORKSPACE: DISPATCH FORM & LEDGER -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <!-- DISPATCH & BARCODE SCAN FORM -->
+            <!-- DISPATCH FORM -->
             <div id="dispatchFormCard" class="bg-white rounded-xl shadow p-4 border lg:col-span-1 space-y-3">
                 <h3 class="text-md font-bold text-blue-900 border-b pb-2">🚚 Dispatch Entry & Scan</h3>
 
@@ -230,7 +223,7 @@
                 </button>
             </div>
 
-            <!-- SHIPMENT LEDGER WITH NET DELIVERED AUDIT -->
+            <!-- SHIPMENT LEDGER -->
             <div id="shipmentsCard" class="bg-white rounded-xl shadow p-4 lg:col-span-2 border space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
                     <h3 class="text-md font-bold text-gray-800" id="tableTitle">📋 Live Dispatch Ledger & Net Delivery Audit</h3>
@@ -259,7 +252,7 @@
 
     </div>
 
-    <!-- DELIVERY AUDIT & MOBILE CAMERA SCANNER MODAL (FOR DRIVER) -->
+    <!-- DELIVERY AUDIT MODAL -->
     <div id="deliveryModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs flex justify-center items-center p-3 z-50">
         <div class="bg-white rounded-xl shadow-2xl max-w-xl w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-2">
@@ -269,7 +262,6 @@
 
             <div id="deliveryModalInfo" class="text-xs bg-blue-50 p-2.5 rounded space-y-1 text-blue-900"></div>
 
-            <!-- LIVE CAMERA SCANNER FOR DRIVER -->
             <div class="bg-slate-100 p-3 rounded border space-y-2">
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold text-gray-800">📷 Scan Damaged Bundle:</span>
@@ -282,7 +274,6 @@
                 </div>
             </div>
 
-            <!-- NET CALCULATION SUMMARY DISPLAY -->
             <div class="bg-emerald-50 border border-emerald-200 p-3 rounded text-xs space-y-1">
                 <div class="font-bold text-emerald-900 flex justify-between">
                     <span>🚚 Dispatched Total: <b id="calcDispatched">0 Pcs</b></span>
@@ -294,9 +285,8 @@
                 </div>
             </div>
 
-            <!-- BUNDLE CHECKLIST -->
             <div class="space-y-2">
-                <span class="text-xs font-bold text-gray-700">Bundle Status Checklist (Default All OK):</span>
+                <span class="text-xs font-bold text-gray-700">Bundle Status Checklist:</span>
                 <div id="bundleChecklist" class="max-h-48 overflow-y-auto border p-2 rounded space-y-2 text-xs bg-slate-50"></div>
             </div>
 
@@ -345,19 +335,6 @@
 
         window.onload = function() {
             fetchCloudShipments();
-            const urlParams = new URLSearchParams(window.location.search);
-            const mode = urlParams.get('mode');
-            
-            if (mode === 'driver') {
-                switchRole('DRIVER');
-                document.getElementById('userRole').value = 'DRIVER';
-                document.getElementById('roleSelectorBox').classList.add('hidden');
-            } else if (mode === 'store') {
-                switchRole('STORE');
-                document.getElementById('userRole').value = 'STORE';
-            } else {
-                switchRole('FACTORY');
-            }
         };
 
         function fetchCloudShipments() {
@@ -379,11 +356,11 @@
                 });
         }
 
-        function syncToCloud(actionType, shipmentData) {
+        function syncToCloud(actionType, shipmentData, extraId) {
             document.getElementById('syncStatus').innerText = "☁️ Saving to Cloud...";
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
-                body: JSON.stringify({ action: actionType, shipment: shipmentData })
+                body: JSON.stringify({ action: actionType, shipment: shipmentData, id: extraId })
             })
             .then(res => res.json())
             .then(() => {
@@ -394,10 +371,10 @@
             .catch(err => console.error("Cloud Save Error:", err));
         }
 
-        // CLEAR ALL DEMO TRANSACTIONS (CLEARS CLOUD & LOCAL DATA)
+        // FULL DEMO RESET FUNCTION
         function clearAllDemoData() {
-            if(confirm("⚠️ नक्की सर्व Demo Transactions/Entries हटवायच्या आहेत का?\n\nयामुळे Dispatched, In-Transit, Delivered आणि Damaged चे सर्व आकडे ० होतील!")) {
-                document.getElementById('syncStatus').innerText = "🗑️ Clearing Data...";
+            if(confirm("⚠️ नक्की सर्व Demo Entries Google Sheet मधून हटवायच्या आहेत का?\n\nयामुळे Dispatched, Transit, Delivered आणि Damaged सर्व ० (Zero) होईल!")) {
+                document.getElementById('syncStatus').innerText = "🗑️ Clearing Google Sheet...";
                 fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     body: JSON.stringify({ action: "CLEAR_ALL" })
@@ -405,18 +382,20 @@
                 .then(res => res.json())
                 .then(() => {
                     shipments = [];
+                    productStock = { "Hydrogoal Inline Pipe": 0, "Rain Pipe": 0, "Flat Inline Pipe": 0, "Submain Pipe": 0 };
+                    saveLocalStock();
                     updateStats();
                     renderTable();
                     renderFactoryReturns();
-                    alert("✅ सर्व Demo Data यशस्वीपणे Clear झाला आहे!");
-                })
-                .catch(err => {
-                    shipments = [];
-                    updateStats();
-                    renderTable();
-                    renderFactoryReturns();
-                    alert("✅ Local Demo Data Cleared!");
+                    alert("✅ सर्व डेटा यशस्वीपणे Zero झाला आहे!");
                 });
+            }
+        }
+
+        // DELETE SINGLE SHIPMENT (HUMAN ERROR CORRECTION)
+        function deleteShipment(id) {
+            if(confirm("⚠️ ही चुकीची एंट्री खरोखर डिलीट करायची आहे का?")) {
+                syncToCloud("DELETE", null, id);
             }
         }
 
@@ -426,7 +405,7 @@
             let qty = parseInt(document.getElementById('editStockQty').value);
 
             if (isNaN(qty) || qty < 0) {
-                alert("कृपया योग्य संख्या (Quantity) प्रविष्ट करा!");
+                alert("कृपया योग्य संख्या प्रविष्ट करा!");
                 return;
             }
 
@@ -439,37 +418,6 @@
 
         function switchRole(role) {
             activeRole = role;
-            if(role === 'DRIVER') {
-                document.getElementById('storeInwardCard').classList.add('hidden');
-                document.getElementById('factoryReturnCard').classList.add('hidden');
-                document.getElementById('dispatchFormCard').classList.add('hidden');
-                document.getElementById('factoryStats').classList.add('hidden');
-                document.getElementById('productSummaryCard').classList.add('hidden');
-                document.getElementById('excelBtn').classList.add('hidden');
-                document.getElementById('shipmentsCard').className = "bg-white rounded-xl shadow p-4 lg:col-span-3 border";
-                document.getElementById('tableTitle').innerText = "🚚 Driver Mobile Portal - Deliveries & Camera Audit";
-                document.getElementById('headerSubtitle').innerText = "🚚 Driver Mobile View Mode";
-            } else if(role === 'STORE') {
-                document.getElementById('storeInwardCard').classList.remove('hidden');
-                document.getElementById('factoryReturnCard').classList.remove('hidden');
-                document.getElementById('dispatchFormCard').classList.add('hidden');
-                document.getElementById('factoryStats').classList.remove('hidden');
-                document.getElementById('productSummaryCard').classList.remove('hidden');
-                document.getElementById('excelBtn').classList.remove('hidden');
-                document.getElementById('shipmentsCard').className = "bg-white rounded-xl shadow p-4 lg:col-span-3 border";
-                document.getElementById('tableTitle').innerText = "🏬 Store Incharge Ledger & Stock Verification";
-                document.getElementById('headerSubtitle').innerText = "🏭 Store Incharge View Mode";
-            } else {
-                document.getElementById('storeInwardCard').classList.remove('hidden');
-                document.getElementById('factoryReturnCard').classList.remove('hidden');
-                document.getElementById('dispatchFormCard').classList.remove('hidden');
-                document.getElementById('factoryStats').classList.remove('hidden');
-                document.getElementById('productSummaryCard').classList.remove('hidden');
-                document.getElementById('excelBtn').classList.remove('hidden');
-                document.getElementById('shipmentsCard').className = "bg-white rounded-xl shadow p-4 lg:col-span-2 border";
-                document.getElementById('tableTitle').innerText = "📋 Live Dispatch Ledger & Net Delivery Audit";
-                document.getElementById('headerSubtitle').innerText = "Mobile Camera Audit, Product Breakdown & Net Delivery ERP";
-            }
             renderTable();
         }
 
@@ -537,7 +485,6 @@
             if(document.getElementById('statMissing')) document.getElementById('statMissing').innerText = totalMissing + " Pcs";
         }
 
-        // PRODUCTION INWARD
         document.getElementById('mfgInwardForm').addEventListener('submit', function(e){
             e.preventDefault();
             let cat = document.getElementById('mfgCategory').value;
@@ -551,7 +498,6 @@
             document.getElementById('mfgInwardForm').reset();
         });
 
-        // BARCODE SCANNER AT FACTORY
         const gunInput = document.getElementById('gunBarcodeInput');
         gunInput.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
@@ -670,7 +616,10 @@
                         </td>
                         <td class="p-2 border text-center space-y-1">
                             <div>${statusBadge}</div>
-                            <div>${actionButton}</div>
+                            <div class="flex justify-center items-center gap-1">
+                                ${actionButton}
+                                <button onclick="deleteShipment(${s.id})" class="bg-red-500 hover:bg-red-600 text-white font-bold px-2 py-1 rounded text-[10px] shadow" title="Delete Wrong Entry">🗑️</button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -803,8 +752,8 @@
                 },
                 (errorMessage) => {}
             ).catch(err => {
-                console.error("Camera Init Error:", err);
-                alert("Mobile Camera Permission Denied or Not Supported!");
+                console.error(err);
+                alert("Camera Permission Denied!");
                 stopCameraScanner();
             });
         }
@@ -823,7 +772,7 @@
         function confirmIndividualDelivery() {
             let inputOtp = document.getElementById('deliveryOtpInput').value.trim();
             if (inputOtp !== activeShipment.otp) {
-                alert("❌ Invalid Dealer OTP! Please enter correct 4-digit OTP.");
+                alert("❌ Invalid Dealer OTP!");
                 return;
             }
 
@@ -844,7 +793,7 @@
 
             syncToCloud("UPDATE", activeShipment);
             closeDeliveryModal();
-            alert(`✅ Delivery Confirmed!\nDelivered OK: ${received.length}\nDamaged: ${damaged.length}\nMissing: ${missing.length}`);
+            alert("✅ Delivery Confirmed!");
         }
 
         function exportExcel() {
@@ -853,20 +802,19 @@
                 "Dealer Name": s.dealerName,
                 "Dealer Phone": s.dealerPhone,
                 "Product": s.product,
-                "Dispatched Bundles": s.dispatchedBundles ? s.dispatchedBundles.length : 0,
-                "Net Delivered OK": s.receivedBundles ? s.receivedBundles.length : 0,
+                "Dispatched": s.dispatchedBundles ? s.dispatchedBundles.length : 0,
+                "Delivered OK": s.receivedBundles ? s.receivedBundles.length : 0,
                 "Damaged": s.damagedBundles ? s.damagedBundles.length : 0,
                 "Missing": s.missingBundles ? s.missingBundles.length : 0,
                 "Driver": s.driverName,
                 "Vehicle": s.vehicleNo,
-                "Status": s.status,
-                "Delivery Date": s.deliveredDateTime
+                "Status": s.status
             }));
 
             let ws = XLSX.utils.json_to_sheet(data);
             let wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Dispatch Ledger");
-            XLSX.writeFile(wb, "Ekvira_Mfg_Dispatch_Audit_Ledger.xlsx");
+            XLSX.writeFile(wb, "Ekvira_Dispatch_Ledger.xlsx");
         }
     </script>
 </body>
