@@ -127,7 +127,7 @@
             </form>
         </div>
 
-        <!-- NEW: FACTORY RETURNED DAMAGED BUNDLE VERIFICATION -->
+        <!-- FACTORY RETURNED DAMAGED BUNDLE VERIFICATION -->
         <div id="factoryReturnCard" class="bg-orange-900 text-white rounded-xl shadow p-4 border border-orange-800 space-y-3">
             <div class="flex justify-between items-center border-b border-orange-700 pb-2">
                 <h3 class="text-md font-bold flex items-center gap-2">📦 Factory Return Verification & Damaged Stock Re-Inward</h3>
@@ -285,11 +285,12 @@
         // GOOGLE APPS SCRIPT DATABASE ENDPOINT URL
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKFqSkLzT40fU1jQZb5LBqZKRMGwYpNn-9Z4KdMwhc5yMAqmO6Sk4jWEvxj8yrqrF4/exec";
 
+        // ALL STOCKS INITIALIZED TO ZERO (0) FOR FRESH PRACTICAL TESTING
         let productStock = JSON.parse(localStorage.getItem('ekvira_stock')) || {
-            "Hydrogoal Inline Pipe": 200,
-            "Rain Pipe": 150,
-            "Flat Inline Pipe": 100,
-            "Submain Pipe": 100
+            "Hydrogoal Inline Pipe": 0,
+            "Rain Pipe": 0,
+            "Flat Inline Pipe": 0,
+            "Submain Pipe": 0
         };
 
         let shipments = [];
@@ -311,6 +312,9 @@
         }
 
         window.onload = function() {
+            // Force save fresh zero stock to local storage on initial run
+            saveLocalStock();
+            
             fetchCloudShipments();
             const urlParams = new URLSearchParams(window.location.search);
             const mode = urlParams.get('mode');
@@ -554,204 +558,247 @@
         }
 
         function triggerWhatsAppMessage(shipment) {
-            let msg = `🚚 *SHRI EKVIRA MFG - Dispatch Details*\n\nDear ${shipment.dealerName},\nYour Order (${shipment.product}) has been dispatched!\n\n📦 Total Bundles: ${shipment.dispatchedBundles.length}\n🚛 Vehicle No: ${shipment.vehicleNo}\n👤 Driver: ${shipment.driverName}\n\n🔑 *Delivery OTP: ${shipment.otp}*\nProvide this OTP to driver upon unloading.`;
-            window.open(`https://wa.me/91${shipment.dealerPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+            let msg = `🚚 *SHRI EKVIRA MFG COATS PVT LTD*\n*DISPATCH NOTIFICATION*\n\nDear *${shipment.dealerName}*,\nYour shipment is dispatched!\n\n📦 *Product:* ${shipment.product}\n📊 *Total Bundles:* ${shipment.dispatchedBundles.length} Pcs\n🚛 *Vehicle:* ${shipment.vehicleNo}\n👤 *Driver:* ${shipment.driverName}\n\n🔑 *Delivery Verification OTP:* *${shipment.otp}*\n\nPlease share this OTP with the driver upon physical receiving and verification.`;
+            let url = `https://wa.me/91${shipment.dealerPhone}?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+        }
+
+        function resendWhatsAppOtp() {
+            if (activeShipment) triggerWhatsAppMessage(activeShipment);
         }
 
         function renderTable() {
-            let body = document.getElementById('dispatchTableBody');
-            body.innerHTML = "";
+            let tbody = document.getElementById('dispatchTableBody');
+            tbody.innerHTML = "";
 
             if (shipments.length === 0) {
-                body.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">No Shipments Found</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">No shipments recorded yet.</td></tr>`;
                 return;
             }
 
             shipments.forEach(s => {
-                let statusBadge = s.status === 'IN_TRANSIT' 
-                    ? `<span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded font-bold">🚚 IN-TRANSIT</span>`
-                    : `<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded font-bold">✅ DELIVERED</span>`;
+                let isDelivered = s.status === 'DELIVERED';
+                let statusBadge = isDelivered 
+                    ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">✅ DELIVERED</span>` 
+                    : `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">🚚 IN-TRANSIT</span>`;
 
-                let actionBtn = s.status === 'IN_TRANSIT' 
-                    ? `<button onclick="openDeliveryModal(${s.id})" class="bg-blue-900 text-white text-[11px] px-3 py-1 rounded font-bold shadow hover:bg-blue-800">🚚 Verify Delivery</button>`
-                    : `<span class="text-[10px] text-gray-500 font-mono">${s.deliveredDateTime}</span>`;
+                let actionButton = isDelivered 
+                    ? `<span class="text-[10px] text-gray-500 block font-semibold">Done: ${s.deliveredDateTime}</span>`
+                    : `<button onclick="openDeliveryModal(${s.id})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1 rounded text-[11px] shadow">📷 Audit & Deliver</button>`;
 
-                body.innerHTML += `
+                tbody.innerHTML += `
                     <tr class="border-b hover:bg-gray-50">
                         <td class="p-2 border">
                             <div class="font-bold text-gray-800">${s.dealerName}</div>
-                            <div class="text-[10px] text-gray-500 font-mono">${s.dispatchDateTime} | ${s.product}</div>
+                            <div class="text-[10px] text-gray-500">${s.product} | ${s.dispatchDateTime}</div>
+                            <div class="text-[10px] text-blue-800 font-mono">Driver: ${s.driverName} (${s.vehicleNo})</div>
                         </td>
-                        <td class="p-2 border text-center font-bold text-blue-900">${s.dispatchedBundles ? s.dispatchedBundles.length : 0} Pcs</td>
-                        <td class="p-2 border text-center font-bold text-emerald-600">${s.receivedBundles ? s.receivedBundles.length : 0} Pcs</td>
-                        <td class="p-2 border text-center text-orange-600 font-semibold">
-                            ${(s.damagedBundles ? s.damagedBundles.length : 0)} Damaged / ${(s.missingBundles ? s.missingBundles.length : 0)} Missing
+                        <td class="p-2 border text-center font-bold">${s.dispatchedBundles ? s.dispatchedBundles.length : 0} Pcs</td>
+                        <td class="p-2 border text-center font-bold text-emerald-600">${isDelivered ? s.receivedBundles.length + ' Pcs' : '-'}</td>
+                        <td class="p-2 border text-center font-semibold">
+                            <span class="text-orange-600">💔 ${s.damagedBundles ? s.damagedBundles.length : 0}</span> / 
+                            <span class="text-red-600">❌ ${s.missingBundles ? s.missingBundles.length : 0}</span>
                         </td>
                         <td class="p-2 border text-center space-y-1">
                             <div>${statusBadge}</div>
-                            <div>${actionBtn}</div>
+                            <div>${actionButton}</div>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        function openDeliveryModal(id) {
-            activeShipment = shipments.find(s => s.id === id);
-            if (!activeShipment) return;
-
-            document.getElementById('deliveryModalInfo').innerHTML = `
-                <b>Dealer:</b> ${activeShipment.dealerName} | <b>Product:</b> ${activeShipment.product}<br>
-                <b>Vehicle:</b> ${activeShipment.vehicleNo} | <b>Total Dispatched:</b> ${activeShipment.dispatchedBundles.length} Bundles
-            `;
-
-            document.getElementById('calcDispatched').innerText = activeShipment.dispatchedBundles.length + " Pcs";
-            
-            renderChecklist();
-            document.getElementById('deliveryModal').classList.remove('hidden');
-        }
-
-        function renderChecklist() {
-            let container = document.getElementById('bundleChecklist');
+        function renderFactoryReturns() {
+            let container = document.getElementById('factoryReturnList');
+            let badge = document.getElementById('pendingReturnBadge');
             container.innerHTML = "";
 
-            activeShipment.dispatchedBundles.forEach(b => {
+            let pendingReturns = shipments.filter(s => s.status === 'DELIVERED' && s.damagedBundles && s.damagedBundles.length > 0 && !s.returnVerified);
+            badge.innerText = `${pendingReturns.length} Pending Verification`;
+
+            if (pendingReturns.length === 0) {
+                container.innerHTML = `<div class="text-center text-orange-200 py-2">No damaged returns pending verification.</div>`;
+                return;
+            }
+
+            pendingReturns.forEach(s => {
                 container.innerHTML += `
-                    <div class="flex justify-between items-center bg-white p-2 border rounded">
-                        <span class="font-mono font-bold text-blue-900">${b}</span>
-                        <select id="status_${b}" onchange="recalculateAudit()" class="border rounded p-1 text-[11px] font-semibold bg-slate-50">
-                            <option value="OK" class="text-emerald-600">✅ OK Delivered</option>
-                            <option value="DAMAGED" class="text-orange-600">💔 Damaged</option>
-                            <option value="MISSING" class="text-red-600">🚨 Missing/Stolen</option>
-                        </select>
+                    <div class="bg-orange-800/60 p-2 rounded border border-orange-700 flex justify-between items-center">
+                        <div>
+                            <div class="font-bold">${s.dealerName} (${s.product})</div>
+                            <div class="text-[10px] text-orange-200">Damaged Bundles: ${s.damagedBundles.join(', ')}</div>
+                        </div>
+                        <button onclick="verifyFactoryReturn(${s.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-2 py-1 rounded text-[10px]">
+                            ✅ Verify & Restock
+                        </button>
                     </div>
                 `;
             });
-            recalculateAudit();
         }
 
-        function recalculateAudit() {
+        function verifyFactoryReturn(shipmentId) {
+            let s = shipments.find(item => item.id === shipmentId);
+            if (!s) return;
+
+            s.returnVerified = true;
+            productStock[s.product] = (productStock[s.product] || 0) + s.damagedBundles.length;
+            saveLocalStock();
+            syncToCloud("UPDATE", s);
+            alert(`✅ Return Verified & ${s.damagedBundles.length} Bundles Re-Added to Store Stock!`);
+        }
+
+        // DELIVERY MODAL & CAMERA SCANNER LOGIC
+        function openDeliveryModal(shipmentId) {
+            activeShipment = shipments.find(s => s.id === shipmentId);
+            if (!activeShipment) return;
+
+            document.getElementById('deliveryModalInfo').innerHTML = `
+                <div><b>Dealer:</b> ${activeShipment.dealerName} (${activeShipment.dealerPhone})</div>
+                <div><b>Product:</b> ${activeShipment.product} | <b>Total Bundles:</b> ${activeShipment.dispatchedBundles.length} Pcs</div>
+            `;
+
+            renderBundleChecklist();
+            calculateNetDelivery();
+            document.getElementById('deliveryModal').classList.remove('hidden');
+        }
+
+        function closeDeliveryModal() {
+            if (isCameraActive) stopCameraScanner();
+            document.getElementById('deliveryModal').classList.add('hidden');
+            activeShipment = null;
+        }
+
+        function renderBundleChecklist() {
+            let container = document.getElementById('bundleChecklist');
+            container.innerHTML = "";
+
+            activeShipment.dispatchedBundles.forEach((b, idx) => {
+                container.innerHTML += `
+                    <div class="flex items-center justify-between bg-white p-1.5 rounded border">
+                        <span class="font-mono font-bold text-gray-800">${b}</span>
+                        <div class="flex gap-2 text-[11px]">
+                            <label class="flex items-center gap-1 cursor-pointer">
+                                <input type="radio" name="bundle_${idx}" value="OK" checked onchange="calculateNetDelivery()" class="text-emerald-600">
+                                <span class="text-emerald-700 font-bold">OK</span>
+                            </label>
+                            <label class="flex items-center gap-1 cursor-pointer">
+                                <input type="radio" name="bundle_${idx}" value="DAMAGED" id="radio_damaged_${b}" onchange="calculateNetDelivery()" class="text-orange-600">
+                                <span class="text-orange-600 font-bold">Damaged</span>
+                            </label>
+                            <label class="flex items-center gap-1 cursor-pointer">
+                                <input type="radio" name="bundle_${idx}" value="MISSING" onchange="calculateNetDelivery()" class="text-red-600">
+                                <span class="text-red-600 font-bold">Missing</span>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function calculateNetDelivery() {
             let okCount = 0, issueCount = 0;
-            activeShipment.dispatchedBundles.forEach(b => {
-                let status = document.getElementById(`status_${b}`) ? document.getElementById(`status_${b}`).value : 'OK';
-                if (status === 'OK') okCount++;
+            activeShipment.dispatchedBundles.forEach((b, idx) => {
+                let val = document.querySelector(`input[name="bundle_${idx}"]:checked`).value;
+                if (val === 'OK') okCount++;
                 else issueCount++;
             });
 
+            document.getElementById('calcDispatched').innerText = activeShipment.dispatchedBundles.length + " Pcs";
             document.getElementById('calcIssues').innerText = issueCount + " Pcs";
             document.getElementById('calcNetDelivered').innerText = okCount + " Pcs";
+        }
+
+        function toggleCameraScanner() {
+            if (isCameraActive) stopCameraScanner();
+            else startCameraScanner();
+        }
+
+        function startCameraScanner() {
+            document.getElementById('cameraScannerBox').classList.remove('hidden');
+            document.getElementById('toggleCamBtn').innerText = "✕ Close Camera";
+            isCameraActive = true;
+
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 150 } },
+                (decodedText) => {
+                    let code = decodedText.trim().toUpperCase();
+                    let targetRadio = document.getElementById(`radio_damaged_${code}`);
+                    if (targetRadio) {
+                        targetRadio.checked = true;
+                        calculateNetDelivery();
+                        try { beepAudio.play(); } catch(e){}
+                    } else {
+                        alert(`⚠️ Bundle Tag ${code} Not Found in this shipment!`);
+                    }
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                console.error("Camera Init Error:", err);
+                alert("Mobile Camera Permission Denied or Not Supported!");
+                stopCameraScanner();
+            });
+        }
+
+        function stopCameraScanner() {
+            if (html5QrCode && isCameraActive) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                    document.getElementById('cameraScannerBox').classList.add('hidden');
+                    document.getElementById('toggleCamBtn').innerText = "📷 Open Mobile Camera";
+                    isCameraActive = false;
+                }).catch(err => console.error(err));
+            }
         }
 
         function confirmIndividualDelivery() {
             let inputOtp = document.getElementById('deliveryOtpInput').value.trim();
             if (inputOtp !== activeShipment.otp) {
-                alert("❌ चुकीचा OTP! कृपया डीलरकडून योग्य ४-अंकी WhatsApp OTP घ्या.");
+                alert("❌ Invalid Dealer OTP! Please enter correct 4-digit OTP.");
                 return;
             }
 
-            activeShipment.receivedBundles = [];
-            activeShipment.damagedBundles = [];
-            activeShipment.missingBundles = [];
+            let received = [], damaged = [], missing = [];
 
-            activeShipment.dispatchedBundles.forEach(b => {
-                let status = document.getElementById(`status_${b}`).value;
-                if (status === 'OK') activeShipment.receivedBundles.push(b);
-                else if (status === 'DAMAGED') activeShipment.damagedBundles.push(b);
-                else if (status === 'MISSING') activeShipment.missingBundles.push(b);
+            activeShipment.dispatchedBundles.forEach((b, idx) => {
+                let status = document.querySelector(`input[name="bundle_${idx}"]:checked`).value;
+                if (status === 'OK') received.push(b);
+                else if (status === 'DAMAGED') damaged.push(b);
+                else if (status === 'MISSING') missing.push(b);
             });
 
+            activeShipment.receivedBundles = received;
+            activeShipment.damagedBundles = damaged;
+            activeShipment.missingBundles = missing;
             activeShipment.status = 'DELIVERED';
             activeShipment.deliveredDateTime = getCurrentFormattedDateTime();
 
             syncToCloud("UPDATE", activeShipment);
-
             closeDeliveryModal();
-            alert("✅ Delivery Successfully Confirmed & Synced to Cloud!");
-        }
-
-        function closeDeliveryModal() {
-            if (isCameraActive) toggleCameraScanner();
-            document.getElementById('deliveryModal').classList.add('hidden');
-        }
-
-        function toggleCameraScanner() {
-            let camBox = document.getElementById('cameraScannerBox');
-            if (!isCameraActive) {
-                camBox.classList.remove('hidden');
-                html5QrCode = new Html5Qrcode("reader");
-                html5QrCode.start(
-                    { facingMode: "environment" },
-                    { fps: 10, qrbox: { width: 250, height: 250 } },
-                    (decodedText) => {
-                        try { beepAudio.play(); } catch(e){}
-                        let bId = decodedText.trim().toUpperCase();
-                        let selectEl = document.getElementById(`status_${bId}`);
-                        if(selectEl) {
-                            selectEl.value = 'DAMAGED';
-                            recalculateAudit();
-                            alert(`📷 Bundle ${bId} Marked as DAMAGED`);
-                        }
-                    }
-                ).catch(err => console.error(err));
-                isCameraActive = true;
-                document.getElementById('toggleCamBtn').innerText = "✕ Close Camera";
-            } else {
-                if (html5QrCode) {
-                    html5QrCode.stop().then(() => {
-                        camBox.classList.add('hidden');
-                        isCameraActive = false;
-                        document.getElementById('toggleCamBtn').innerText = "📷 Open Mobile Camera";
-                    });
-                }
-            }
-        }
-
-        function renderFactoryReturns() {
-            let container = document.getElementById('factoryReturnList');
-            container.innerHTML = "";
-            let count = 0;
-
-            shipments.forEach(s => {
-                if(s.damagedBundles && s.damagedBundles.length > 0 && !s.returnVerified) {
-                    count++;
-                    container.innerHTML += `
-                        <div class="bg-orange-950 p-2 rounded border border-orange-700 flex justify-between items-center">
-                            <div>
-                                <b>${s.dealerName}</b> (${s.product})
-                                <div class="text-[10px] text-orange-300">Damaged Pcs: ${s.damagedBundles.join(', ')}</div>
-                            </div>
-                            <button onclick="verifyFactoryReturn(${s.id})" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] px-2 py-1 rounded font-bold">
-                                Re-Inward to Factory
-                            </button>
-                        </div>
-                    `;
-                }
-            });
-
-            document.getElementById('pendingReturnBadge').innerText = `${count} Pending Verification`;
-            if(count === 0) {
-                container.innerHTML = `<div class="text-center text-orange-200 py-2">No damaged returns pending verification.</div>`;
-            }
-        }
-
-        function verifyFactoryReturn(id) {
-            let shipment = shipments.find(s => s.id === id);
-            if(!shipment) return;
-
-            shipment.returnVerified = true;
-            syncToCloud("UPDATE", shipment);
-            alert("✅ Return Stock Verified & Synced!");
-        }
-
-        function resendWhatsAppOtp() {
-            if(activeShipment) triggerWhatsAppMessage(activeShipment);
+            alert(`✅ Delivery Confirmed!\nDelivered OK: ${received.length}\nDamaged: ${damaged.length}\nMissing: ${missing.length}`);
         }
 
         function exportExcel() {
-            const worksheet = XLSX.utils.json_to_sheet(shipments);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Dispatches");
-            XLSX.writeFile(workbook, "Ekvira_ERP_Dispatch_Ledger.xlsx");
+            let data = shipments.map(s => ({
+                "Dispatch Date": s.dispatchDateTime,
+                "Dealer Name": s.dealerName,
+                "Dealer Phone": s.dealerPhone,
+                "Product": s.product,
+                "Dispatched Bundles": s.dispatchedBundles ? s.dispatchedBundles.length : 0,
+                "Net Delivered OK": s.receivedBundles ? s.receivedBundles.length : 0,
+                "Damaged": s.damagedBundles ? s.damagedBundles.length : 0,
+                "Missing": s.missingBundles ? s.missingBundles.length : 0,
+                "Driver": s.driverName,
+                "Vehicle": s.vehicleNo,
+                "Status": s.status,
+                "Delivery Date": s.deliveredDateTime
+            }));
+
+            let ws = XLSX.utils.json_to_sheet(data);
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Dispatch Ledger");
+            XLSX.writeFile(wb, "Ekvira_Mfg_Dispatch_Audit_Ledger.xlsx");
         }
     </script>
 </body>
