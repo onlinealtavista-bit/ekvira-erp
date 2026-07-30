@@ -21,8 +21,14 @@
                 <h2 class="text-xl sm:text-2xl font-bold">SHRI EKVIRA MFG COATS PVT. LTD.</h2>
                 <p class="text-xs text-blue-200" id="headerSubtitle">Mobile Camera Audit, Product Breakdown & Net Delivery ERP</p>
             </div>
-            <div class="flex items-center gap-2" id="roleSelectorBox">
+            <div class="flex items-center gap-2 flex-wrap" id="roleSelectorBox">
                 <span id="syncStatus" class="text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse">☁️ Connecting Cloud...</span>
+                
+                <!-- CLEAR ALL DEMO DATA BUTTON -->
+                <button onclick="clearAllDemoData()" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3 py-1.5 rounded shadow flex items-center gap-1">
+                    🗑️ Reset All Demo Data
+                </button>
+
                 <select id="userRole" onchange="switchRole(this.value)" class="bg-blue-800 text-white text-xs p-2 rounded border border-blue-600 font-semibold cursor-pointer">
                     <option value="FACTORY">Factory Admin View (All Controls)</option>
                     <option value="STORE">🏭 Store Incharge View</option>
@@ -96,35 +102,63 @@
             </div>
         </div>
 
-        <!-- SECTION 1: PRODUCTION INWARD -->
-        <div id="storeInwardCard" class="bg-indigo-900 text-white rounded-xl shadow p-4 border border-indigo-800">
-            <div class="flex justify-between items-center border-b border-indigo-700 pb-2 mb-3">
-                <h3 class="text-md font-bold flex items-center gap-2">🏭 Production to Store Inward Entry</h3>
+        <!-- SECTION 1: PRODUCTION INWARD & STOCK EDIT PANEL -->
+        <div id="storeInwardCard" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <!-- INWARD FORM -->
+            <div class="bg-indigo-900 text-white rounded-xl shadow p-4 border border-indigo-800 md:col-span-2">
+                <div class="flex justify-between items-center border-b border-indigo-700 pb-2 mb-3">
+                    <h3 class="text-md font-bold flex items-center gap-2">🏭 Production to Store Inward Entry</h3>
+                </div>
+                <form id="mfgInwardForm" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                    <div>
+                        <label class="block font-medium text-indigo-200">Product Category</label>
+                        <select id="mfgCategory" class="w-full border rounded p-2 mt-1 text-black font-semibold">
+                            <option value="Hydrogoal Inline Pipe">Hydrogoal Inline & Online Lateral</option>
+                            <option value="Rain Pipe">Rain Pipe</option>
+                            <option value="Flat Inline Pipe">Flat Inline Pipe</option>
+                            <option value="Submain Pipe">Submain Pipe (Patta Pipe)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-indigo-200">Batch Series Header</label>
+                        <input type="text" id="mfgBatchNo" class="w-full border rounded p-2 mt-1 text-black font-mono font-bold uppercase" placeholder="e.g. BATCH-RAIN-2026" required>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-indigo-200">Quantity (Bundles)</label>
+                        <input type="number" id="mfgQty" min="1" class="w-full border rounded p-2 mt-1 text-black font-bold" placeholder="e.g. 500" required>
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded text-xs transition shadow">
+                            📥 Add Stock
+                        </button>
+                    </div>
+                </form>
             </div>
-            <form id="mfgInwardForm" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-                <div>
-                    <label class="block font-medium text-indigo-200">Product Category</label>
-                    <select id="mfgCategory" class="w-full border rounded p-2 mt-1 text-black font-semibold">
-                        <option value="Hydrogoal Inline Pipe">Hydrogoal Inline & Online Lateral</option>
-                        <option value="Rain Pipe">Rain Pipe</option>
-                        <option value="Flat Inline Pipe">Flat Inline Pipe</option>
-                        <option value="Submain Pipe">Submain Pipe (Patta Pipe)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block font-medium text-indigo-200">Batch Series Header</label>
-                    <input type="text" id="mfgBatchNo" class="w-full border rounded p-2 mt-1 text-black font-mono font-bold uppercase" placeholder="e.g. BATCH-RAIN-2026" required>
-                </div>
-                <div>
-                    <label class="block font-medium text-indigo-200">Quantity (Bundles)</label>
-                    <input type="number" id="mfgQty" min="1" class="w-full border rounded p-2 mt-1 text-black font-bold" placeholder="e.g. 500" required>
-                </div>
-                <div class="flex items-end">
-                    <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded text-xs transition shadow">
-                        📥 Add Stock to Store
+
+            <!-- MANUAL STOCK EDIT / CORRECTION FEATURE -->
+            <div class="bg-slate-800 text-white rounded-xl shadow p-4 border border-slate-700 md:col-span-1 space-y-2">
+                <h3 class="text-sm font-bold text-amber-400 border-b border-slate-700 pb-1">✏️ Direct Stock Edit / Correction</h3>
+                <div class="text-xs space-y-2">
+                    <div>
+                        <label class="block text-gray-300">Select Product:</label>
+                        <select id="editStockCategory" class="w-full border rounded p-1.5 text-black font-semibold">
+                            <option value="Hydrogoal Inline Pipe">Hydrogoal Inline Pipe</option>
+                            <option value="Rain Pipe">Rain Pipe</option>
+                            <option value="Flat Inline Pipe">Flat Inline Pipe</option>
+                            <option value="Submain Pipe">Submain Pipe</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-300">Set Exact Stock Qty:</label>
+                        <input type="number" id="editStockQty" placeholder="e.g. 150" class="w-full border rounded p-1.5 text-black font-bold">
+                    </div>
+                    <button onclick="applyStockEdit()" class="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold py-1.5 rounded text-xs shadow">
+                        💾 Update Stock
                     </button>
                 </div>
-            </form>
+            </div>
+
         </div>
 
         <!-- FACTORY RETURNED DAMAGED BUNDLE VERIFICATION -->
@@ -282,10 +316,8 @@
     </div>
 
     <script>
-        // GOOGLE APPS SCRIPT DATABASE ENDPOINT URL
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKFqSkLzT40fU1jQZb5LBqZKRMGwYpNn-9Z4KdMwhc5yMAqmO6Sk4jWEvxj8yrqrF4/exec";
 
-        // ALL STOCKS INITIALIZED TO ZERO (0) FOR FRESH PRACTICAL TESTING
         let productStock = JSON.parse(localStorage.getItem('ekvira_stock')) || {
             "Hydrogoal Inline Pipe": 0,
             "Rain Pipe": 0,
@@ -312,9 +344,6 @@
         }
 
         window.onload = function() {
-            // Force save fresh zero stock to local storage on initial run
-            saveLocalStock();
-            
             fetchCloudShipments();
             const urlParams = new URLSearchParams(window.location.search);
             const mode = urlParams.get('mode');
@@ -331,7 +360,6 @@
             }
         };
 
-        // FETCH SHIPMENTS FROM GOOGLE SHEET CLOUD
         function fetchCloudShipments() {
             document.getElementById('syncStatus').innerText = "☁️ Syncing Cloud...";
             fetch(GOOGLE_SCRIPT_URL)
@@ -351,7 +379,6 @@
                 });
         }
 
-        // SAVE / UPDATE TO GOOGLE SHEET
         function syncToCloud(actionType, shipmentData) {
             document.getElementById('syncStatus').innerText = "☁️ Saving to Cloud...";
             fetch(GOOGLE_SCRIPT_URL, {
@@ -365,6 +392,49 @@
                 fetchCloudShipments();
             })
             .catch(err => console.error("Cloud Save Error:", err));
+        }
+
+        // CLEAR ALL DEMO TRANSACTIONS (CLEARS CLOUD & LOCAL DATA)
+        function clearAllDemoData() {
+            if(confirm("⚠️ नक्की सर्व Demo Transactions/Entries हटवायच्या आहेत का?\n\nयामुळे Dispatched, In-Transit, Delivered आणि Damaged चे सर्व आकडे ० होतील!")) {
+                document.getElementById('syncStatus').innerText = "🗑️ Clearing Data...";
+                fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "CLEAR_ALL" })
+                })
+                .then(res => res.json())
+                .then(() => {
+                    shipments = [];
+                    updateStats();
+                    renderTable();
+                    renderFactoryReturns();
+                    alert("✅ सर्व Demo Data यशस्वीपणे Clear झाला आहे!");
+                })
+                .catch(err => {
+                    shipments = [];
+                    updateStats();
+                    renderTable();
+                    renderFactoryReturns();
+                    alert("✅ Local Demo Data Cleared!");
+                });
+            }
+        }
+
+        // MANUAL STOCK EDIT FUNCTION
+        function applyStockEdit() {
+            let cat = document.getElementById('editStockCategory').value;
+            let qty = parseInt(document.getElementById('editStockQty').value);
+
+            if (isNaN(qty) || qty < 0) {
+                alert("कृपया योग्य संख्या (Quantity) प्रविष्ट करा!");
+                return;
+            }
+
+            productStock[cat] = qty;
+            saveLocalStock();
+            updateStats();
+            document.getElementById('editStockQty').value = "";
+            alert(`✅ ${cat} चा स्टॉक आता ${qty} Pcs वर सेट झाला आहे!`);
         }
 
         function switchRole(role) {
@@ -548,7 +618,6 @@
             productStock[category] = Math.max(0, (productStock[category] || 0) - shipment.dispatchedBundles.length);
             saveLocalStock();
 
-            // SYNC TO GOOGLE SHEETS
             syncToCloud("ADD", shipment);
 
             currentScannedBundles = [];
@@ -572,7 +641,7 @@
             tbody.innerHTML = "";
 
             if (shipments.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">No shipments recorded yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">No active shipments found. All clear!</td></tr>`;
                 return;
             }
 
@@ -647,7 +716,6 @@
             alert(`✅ Return Verified & ${s.damagedBundles.length} Bundles Re-Added to Store Stock!`);
         }
 
-        // DELIVERY MODAL & CAMERA SCANNER LOGIC
         function openDeliveryModal(shipmentId) {
             activeShipment = shipments.find(s => s.id === shipmentId);
             if (!activeShipment) return;
