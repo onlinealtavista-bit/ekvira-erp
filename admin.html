@@ -573,53 +573,46 @@
         }
 
         function triggerWhatsAppMessage(shipment) {
-            let msg = `🚚 *SHRI EKVIRA MFG COATS PVT LTD*\n*DISPATCH NOTIFICATION*\n\nDear *${shipment.dealerName}*,\nYour shipment is dispatched!\n\n📦 *Product:* ${shipment.product}\n📊 *Total Bundles:* ${shipment.dispatchedBundles.length} Pcs\n🚛 *Vehicle:* ${shipment.vehicleNo}\n👤 *Driver:* ${shipment.driverName}\n\n🔑 *Delivery Verification OTP:* *${shipment.otp}*\n\nPlease share this OTP with the driver upon physical receiving and verification.`;
-            let url = `https://wa.me/91${shipment.dealerPhone}?text=${encodeURIComponent(msg)}`;
+            let msg = `🚚 *SHRI EKVIRA MFG COATS PVT LTD*\n*DISPATCH NOTICE*\n\nDear Dealer: ${shipment.dealerName}\nProduct: ${shipment.product}\nDispatched Qty: ${shipment.dispatchedBundles.length} Bundles\nVehicle No: ${shipment.vehicleNo}\nDriver: ${shipment.driverName}\n\n🔑 *Delivery OTP: ${shipment.otp}*\n\nPlease share this OTP with driver upon verifying physical delivery.`;
+            let url = `https://api.whatsapp.com/send?phone=91${shipment.dealerPhone}&text=${encodeURIComponent(msg)}`;
             window.open(url, '_blank');
-        }
-
-        function resendWhatsAppOtp() {
-            if (activeShipment) triggerWhatsAppMessage(activeShipment);
         }
 
         function renderTable() {
             let tbody = document.getElementById('dispatchTableBody');
             tbody.innerHTML = "";
 
-            if (shipments.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">No active shipments found. All clear!</td></tr>`;
+            if(shipments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">कोणतीही Dispatch Entry उपलब्ध नाही.</td></tr>`;
                 return;
             }
 
             shipments.forEach(s => {
-                let isDelivered = s.status === 'DELIVERED';
-                let statusBadge = isDelivered 
-                    ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">✅ DELIVERED</span>` 
-                    : `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">🚚 IN-TRANSIT</span>`;
+                let statusBadge = s.status === 'DELIVERED' 
+                    ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">✅ Delivered</span>`
+                    : `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">🚚 In-Transit</span>`;
 
-                let actionButton = isDelivered 
-                    ? `<span class="text-[10px] text-gray-500 block font-semibold">Done: ${s.deliveredDateTime}</span>`
-                    : `<button onclick="openDeliveryModal(${s.id})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1 rounded text-[11px] shadow">📷 Audit & Deliver</button>`;
+                let actionBtn = s.status === 'IN_TRANSIT'
+                    ? `<button onclick="openDeliveryModal(${s.id})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-2 py-1 rounded shadow">📲 Delivery Audit</button>`
+                    : `<span class="text-[10px] text-gray-500 font-mono">${s.deliveredDateTime || 'Verified'}</span>`;
+
+                let deleteBtn = `<button onclick="deleteShipment(${s.id})" class="text-red-500 hover:text-red-700 font-bold ml-2 text-xs" title="Delete Entry">🗑️</button>`;
 
                 tbody.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50">
+                    <tr class="border-b hover:bg-slate-50">
                         <td class="p-2 border">
-                            <div class="font-bold text-gray-800">${s.dealerName}</div>
+                            <div class="font-bold text-blue-900">${s.dealerName}</div>
                             <div class="text-[10px] text-gray-500">${s.product} | ${s.dispatchDateTime}</div>
-                            <div class="text-[10px] text-blue-800 font-mono">Driver: ${s.driverName} (${s.vehicleNo})</div>
+                            <div class="text-[10px] font-mono text-gray-600">Driver: ${s.driverName} (${s.vehicleNo})</div>
                         </td>
-                        <td class="p-2 border text-center font-bold">${s.dispatchedBundles ? s.dispatchedBundles.length : 0} Pcs</td>
-                        <td class="p-2 border text-center font-bold text-emerald-600">${isDelivered ? s.receivedBundles.length + ' Pcs' : '-'}</td>
-                        <td class="p-2 border text-center font-semibold">
-                            <span class="text-orange-600">💔 ${s.damagedBundles ? s.damagedBundles.length : 0}</span> / 
-                            <span class="text-red-600">❌ ${s.missingBundles ? s.missingBundles.length : 0}</span>
+                        <td class="p-2 border text-center font-bold text-gray-800">${s.dispatchedBundles ? s.dispatchedBundles.length : 0} Pcs</td>
+                        <td class="p-2 border text-center font-bold text-emerald-600">${s.receivedBundles ? s.receivedBundles.length : 0} Pcs</td>
+                        <td class="p-2 border text-center font-semibold text-orange-600">
+                            ${s.damagedBundles ? s.damagedBundles.length : 0} Dmg / ${s.missingBundles ? s.missingBundles.length : 0} Miss
                         </td>
                         <td class="p-2 border text-center space-y-1">
                             <div>${statusBadge}</div>
-                            <div class="flex justify-center items-center gap-1">
-                                ${actionButton}
-                                <button onclick="deleteShipment(${s.id})" class="bg-red-500 hover:bg-red-600 text-white font-bold px-2 py-1 rounded text-[10px] shadow" title="Delete Wrong Entry">🗑️</button>
-                            </div>
+                            <div class="flex justify-center items-center">${actionBtn} ${deleteBtn}</div>
                         </td>
                     </tr>
                 `;
@@ -629,25 +622,25 @@
         function renderFactoryReturns() {
             let container = document.getElementById('factoryReturnList');
             let badge = document.getElementById('pendingReturnBadge');
-            container.innerHTML = "";
-
             let pendingReturns = shipments.filter(s => s.status === 'DELIVERED' && s.damagedBundles && s.damagedBundles.length > 0 && !s.returnVerified);
+
             badge.innerText = `${pendingReturns.length} Pending Verification`;
 
-            if (pendingReturns.length === 0) {
+            if(pendingReturns.length === 0) {
                 container.innerHTML = `<div class="text-center text-orange-200 py-2">No damaged returns pending verification.</div>`;
                 return;
             }
 
+            container.innerHTML = "";
             pendingReturns.forEach(s => {
                 container.innerHTML += `
-                    <div class="bg-orange-800/60 p-2 rounded border border-orange-700 flex justify-between items-center">
+                    <div class="bg-orange-800 p-2 rounded flex justify-between items-center border border-orange-700">
                         <div>
-                            <div class="font-bold">${s.dealerName} (${s.product})</div>
-                            <div class="text-[10px] text-orange-200">Damaged Bundles: ${s.damagedBundles.join(', ')}</div>
+                            <div class="font-bold text-white">${s.dealerName} (${s.product})</div>
+                            <div class="text-[10px] text-orange-200">Damaged Bundles (${s.damagedBundles.length}): ${s.damagedBundles.join(', ')}</div>
                         </div>
-                        <button onclick="verifyFactoryReturn(${s.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-2 py-1 rounded text-[10px]">
-                            ✅ Verify & Restock
+                        <button onclick="verifyFactoryReturn(${s.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-2 py-1 rounded text-[11px] shadow">
+                            ✅ Receive Damaged Bundles
                         </button>
                     </div>
                 `;
@@ -655,32 +648,33 @@
         }
 
         function verifyFactoryReturn(shipmentId) {
-            let s = shipments.find(item => item.id === shipmentId);
-            if (!s) return;
+            let shipment = shipments.find(s => s.id === shipmentId);
+            if(!shipment) return;
 
-            s.returnVerified = true;
-            productStock[s.product] = (productStock[s.product] || 0) + s.damagedBundles.length;
-            saveLocalStock();
-            syncToCloud("UPDATE", s);
-            alert(`✅ Return Verified & ${s.damagedBundles.length} Bundles Re-Added to Store Stock!`);
+            shipment.returnVerified = true;
+            syncToCloud("UPDATE", shipment);
+            alert(`✅ Damaged Bundles Verified & Logged in Factory Return System!`);
         }
 
-        function openDeliveryModal(shipmentId) {
-            activeShipment = shipments.find(s => s.id === shipmentId);
-            if (!activeShipment) return;
+        function openDeliveryModal(id) {
+            activeShipment = shipments.find(s => s.id === id);
+            if(!activeShipment) return;
 
             document.getElementById('deliveryModalInfo').innerHTML = `
                 <div><b>Dealer:</b> ${activeShipment.dealerName} (${activeShipment.dealerPhone})</div>
-                <div><b>Product:</b> ${activeShipment.product} | <b>Total Bundles:</b> ${activeShipment.dispatchedBundles.length} Pcs</div>
+                <div><b>Product:</b> ${activeShipment.product} | <b>Vehicle:</b> ${activeShipment.vehicleNo}</div>
             `;
 
+            document.getElementById('calcDispatched').innerText = `${activeShipment.dispatchedBundles.length} Pcs`;
+            
             renderBundleChecklist();
-            calculateNetDelivery();
+            updateModalCalculations();
+
             document.getElementById('deliveryModal').classList.remove('hidden');
         }
 
         function closeDeliveryModal() {
-            if (isCameraActive) stopCameraScanner();
+            if(isCameraActive) stopCameraScanner();
             document.getElementById('deliveryModal').classList.add('hidden');
             activeShipment = null;
         }
@@ -689,100 +683,56 @@
             let container = document.getElementById('bundleChecklist');
             container.innerHTML = "";
 
-            activeShipment.dispatchedBundles.forEach((b, idx) => {
+            activeShipment.dispatchedBundles.forEach(bundleId => {
                 container.innerHTML += `
-                    <div class="flex items-center justify-between bg-white p-1.5 rounded border">
-                        <span class="font-mono font-bold text-gray-800">${b}</span>
-                        <div class="flex gap-2 text-[11px]">
-                            <label class="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="bundle_${idx}" value="OK" checked onchange="calculateNetDelivery()" class="text-emerald-600">
-                                <span class="text-emerald-700 font-bold">OK</span>
-                            </label>
-                            <label class="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="bundle_${idx}" value="DAMAGED" id="radio_damaged_${b}" onchange="calculateNetDelivery()" class="text-orange-600">
-                                <span class="text-orange-600 font-bold">Damaged</span>
-                            </label>
-                            <label class="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="bundle_${idx}" value="MISSING" onchange="calculateNetDelivery()" class="text-red-600">
-                                <span class="text-red-600 font-bold">Missing</span>
-                            </label>
-                        </div>
+                    <div class="flex justify-between items-center bg-white p-1.5 rounded border">
+                        <span class="font-mono font-bold text-gray-800">${bundleId}</span>
+                        <select id="status_${bundleId}" onchange="updateModalCalculations()" class="border rounded p-1 text-[11px] font-bold">
+                            <option value="OK">✅ OK Delivered</option>
+                            <option value="DAMAGED">💔 Damaged</option>
+                            <option value="MISSING">❌ Missing/Stolen</option>
+                        </select>
                     </div>
                 `;
             });
         }
 
-        function calculateNetDelivery() {
-            let okCount = 0, issueCount = 0;
-            activeShipment.dispatchedBundles.forEach((b, idx) => {
-                let val = document.querySelector(`input[name="bundle_${idx}"]:checked`).value;
-                if (val === 'OK') okCount++;
+        function updateModalCalculations() {
+            if(!activeShipment) return;
+
+            let okCount = 0;
+            let issueCount = 0;
+
+            activeShipment.dispatchedBundles.forEach(bundleId => {
+                let select = document.getElementById(`status_${bundleId}`);
+                let val = select ? select.value : 'OK';
+
+                if(val === 'OK') okCount++;
                 else issueCount++;
             });
 
-            document.getElementById('calcDispatched').innerText = activeShipment.dispatchedBundles.length + " Pcs";
-            document.getElementById('calcIssues').innerText = issueCount + " Pcs";
-            document.getElementById('calcNetDelivered').innerText = okCount + " Pcs";
-        }
-
-        function toggleCameraScanner() {
-            if (isCameraActive) stopCameraScanner();
-            else startCameraScanner();
-        }
-
-        function startCameraScanner() {
-            document.getElementById('cameraScannerBox').classList.remove('hidden');
-            document.getElementById('toggleCamBtn').innerText = "✕ Close Camera";
-            isCameraActive = true;
-
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 150 } },
-                (decodedText) => {
-                    let code = decodedText.trim().toUpperCase();
-                    let targetRadio = document.getElementById(`radio_damaged_${code}`);
-                    if (targetRadio) {
-                        targetRadio.checked = true;
-                        calculateNetDelivery();
-                        try { beepAudio.play(); } catch(e){}
-                    } else {
-                        alert(`⚠️ Bundle Tag ${code} Not Found in this shipment!`);
-                    }
-                },
-                (errorMessage) => {}
-            ).catch(err => {
-                console.error(err);
-                alert("Camera Permission Denied!");
-                stopCameraScanner();
-            });
-        }
-
-        function stopCameraScanner() {
-            if (html5QrCode && isCameraActive) {
-                html5QrCode.stop().then(() => {
-                    html5QrCode.clear();
-                    document.getElementById('cameraScannerBox').classList.add('hidden');
-                    document.getElementById('toggleCamBtn').innerText = "📷 Open Mobile Camera";
-                    isCameraActive = false;
-                }).catch(err => console.error(err));
-            }
+            document.getElementById('calcIssues').innerText = `${issueCount} Pcs`;
+            document.getElementById('calcNetDelivered').innerText = `${okCount} Pcs`;
         }
 
         function confirmIndividualDelivery() {
+            if(!activeShipment) return;
+
             let inputOtp = document.getElementById('deliveryOtpInput').value.trim();
-            if (inputOtp !== activeShipment.otp) {
-                alert("❌ Invalid Dealer OTP!");
+            if(inputOtp !== activeShipment.otp) {
+                alert("❌ अयोग्य OTP! कृपया Dealer कडून अचूक 4-Digit OTP घ्या.");
                 return;
             }
 
-            let received = [], damaged = [], missing = [];
+            let received = [];
+            let damaged = [];
+            let missing = [];
 
-            activeShipment.dispatchedBundles.forEach((b, idx) => {
-                let status = document.querySelector(`input[name="bundle_${idx}"]:checked`).value;
-                if (status === 'OK') received.push(b);
-                else if (status === 'DAMAGED') damaged.push(b);
-                else if (status === 'MISSING') missing.push(b);
+            activeShipment.dispatchedBundles.forEach(bundleId => {
+                let val = document.getElementById(`status_${bundleId}`).value;
+                if(val === 'OK') received.push(bundleId);
+                else if(val === 'DAMAGED') damaged.push(bundleId);
+                else if(val === 'MISSING') missing.push(bundleId);
             });
 
             activeShipment.receivedBundles = received;
@@ -792,29 +742,87 @@
             activeShipment.deliveredDateTime = getCurrentFormattedDateTime();
 
             syncToCloud("UPDATE", activeShipment);
+
             closeDeliveryModal();
-            alert("✅ Delivery Confirmed!");
+            alert("✅ Delivery Successfully Verified & Updated!");
+        }
+
+        function resendWhatsAppOtp() {
+            if(activeShipment) triggerWhatsAppMessage(activeShipment);
+        }
+
+        function toggleCameraScanner() {
+            if(isCameraActive) {
+                stopCameraScanner();
+            } else {
+                startCameraScanner();
+            }
+        }
+
+        function startCameraScanner() {
+            document.getElementById('cameraScannerBox').classList.remove('hidden');
+            document.getElementById('toggleCamBtn').innerText = "✕ Close Camera";
+
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText) => {
+                    let code = decodedText.trim().toUpperCase();
+                    let select = document.getElementById(`status_${code}`);
+                    if(select) {
+                        select.value = "DAMAGED";
+                        updateModalCalculations();
+                        try { beepAudio.play(); } catch(err){}
+                        alert(`💔 Bundle ${code} Marked as DAMAGED!`);
+                    } else {
+                        alert(`⚠️ Bundle ${code} या Shipment मध्ये उपलब्ध नाही!`);
+                    }
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                console.error("Camera Error:", err);
+                alert("📷 Camera Open करण्यात अडचण येत आहे. Device Permission तपासा.");
+            });
+
+            isCameraActive = true;
+        }
+
+        function stopCameraScanner() {
+            if(html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('cameraScannerBox').classList.add('hidden');
+                    document.getElementById('toggleCamBtn').innerText = "📷 Open Mobile Camera";
+                    isCameraActive = false;
+                }).catch(err => console.error("Camera Stop Error:", err));
+            }
         }
 
         function exportExcel() {
-            let data = shipments.map(s => ({
+            if(shipments.length === 0) {
+                alert("निर्यात करण्यासाठी कोणताच डेटा नाही!");
+                return;
+            }
+
+            let exportData = shipments.map(s => ({
                 "Dispatch Date": s.dispatchDateTime,
+                "Product": s.product,
                 "Dealer Name": s.dealerName,
                 "Dealer Phone": s.dealerPhone,
-                "Product": s.product,
-                "Dispatched": s.dispatchedBundles ? s.dispatchedBundles.length : 0,
-                "Delivered OK": s.receivedBundles ? s.receivedBundles.length : 0,
-                "Damaged": s.damagedBundles ? s.damagedBundles.length : 0,
-                "Missing": s.missingBundles ? s.missingBundles.length : 0,
-                "Driver": s.driverName,
-                "Vehicle": s.vehicleNo,
-                "Status": s.status
+                "Driver Name": s.driverName,
+                "Vehicle No": s.vehicleNo,
+                "Dispatched Qty": s.dispatchedBundles ? s.dispatchedBundles.length : 0,
+                "Net Delivered OK": s.receivedBundles ? s.receivedBundles.length : 0,
+                "Damaged Qty": s.damagedBundles ? s.damagedBundles.length : 0,
+                "Missing Qty": s.missingBundles ? s.missingBundles.length : 0,
+                "Status": s.status,
+                "Delivery Date": s.deliveredDateTime
             }));
 
-            let ws = XLSX.utils.json_to_sheet(data);
+            let ws = XLSX.utils.json_to_sheet(exportData);
             let wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Dispatch Ledger");
-            XLSX.writeFile(wb, "Ekvira_Dispatch_Ledger.xlsx");
+            XLSX.writeFile(wb, `Ekvira_ERP_Dispatch_Report_${Date.now()}.xlsx`);
         }
     </script>
 </body>
