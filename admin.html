@@ -10,27 +10,92 @@
 </head>
 <body class="bg-slate-100 p-2 sm:p-6 font-sans">
 
+    <!-- LOGIN MODAL -->
+    <div id="loginModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex justify-center items-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-gray-200">
+            <div class="text-center space-y-1">
+                <div class="w-12 h-12 bg-blue-900 text-white rounded-full flex items-center justify-center mx-auto text-xl font-bold shadow">🔐</div>
+                <h2 class="text-xl font-bold text-gray-800">SHRI EKVIRA MFG ERP</h2>
+                <p class="text-xs text-gray-500">कृपया तुमचा User ID आणि Password प्रविष्ट करा</p>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">User ID / युझर आयडी:</label>
+                    <input type="text" id="loginUserId" placeholder="उदा. admin / store1" class="w-full border rounded-lg p-2.5 text-xs font-semibold focus:ring-2 focus:ring-blue-600">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Password / पासवर्ड:</label>
+                    <input type="password" id="loginPassword" placeholder="Enter Password" class="w-full border rounded-lg p-2.5 text-xs font-semibold focus:ring-2 focus:ring-blue-600">
+                </div>
+
+                <button onclick="performLogin()" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-2.5 rounded-lg text-xs transition shadow-lg">
+                    🔒 System Login
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         
         <!-- HEADER -->
         <div class="bg-blue-900 text-white rounded-xl shadow-md p-4 flex justify-between items-center flex-wrap gap-2">
             <div>
                 <h2 class="text-xl sm:text-2xl font-bold">SHRI EKVIRA MFG COATS PVT. LTD.</h2>
-                <p class="text-xs text-blue-200" id="headerSubtitle">Mobile Camera Audit & Net Delivery ERP</p>
+                <p class="text-xs text-blue-200">Mobile Camera Audit & Net Delivery ERP</p>
             </div>
-            <div class="flex items-center gap-2 flex-wrap" id="roleSelectorBox">
+            <div class="flex items-center gap-3 flex-wrap">
                 <span id="syncStatus" class="text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse">☁️ Connecting...</span>
-
-                <select id="userRole" onchange="switchRole(this.value)" class="bg-blue-800 text-white text-xs p-2 rounded border border-blue-600 font-semibold cursor-pointer">
-                    <option value="FACTORY">Factory Admin View (All Controls)</option>
-                    <option value="STORE">🏭 Store Incharge View</option>
-                    <option value="DRIVER">🚚 Driver Mobile View</option>
-                </select>
+                
+                <div id="userBadge" class="bg-blue-800 border border-blue-600 text-white px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2">
+                    <span id="activeUserDisplay">👤 Guest</span>
+                    <button onclick="logout()" class="text-red-300 hover:text-red-100 font-bold text-[11px] underline ml-2">Logout</button>
+                </div>
             </div>
         </div>
 
-        <!-- FACTORY ADMIN & STORE: STATS DASHBOARD -->
-        <div id="factoryStats" class="admin-only store-visible space-y-3">
+        <!-- FACTORY ADMIN ONLY: USER MANAGEMENT PANEL -->
+        <div id="userManagementCard" class="admin-only hidden bg-slate-800 text-white rounded-xl shadow p-4 border border-slate-700 space-y-3">
+            <h3 class="text-sm font-bold text-amber-400 border-b border-slate-700 pb-1 flex justify-between items-center">
+                <span>👥 User Management (Add System Users)</span>
+                <span class="text-[10px] text-gray-300 font-normal">*फक्त Factory Admin साठी</span>
+            </h3>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                <div>
+                    <label class="block text-gray-300">Staff Name (नाव):</label>
+                    <input type="text" id="newStaffName" placeholder="उदा. Ramesh Patil" class="w-full border rounded p-1.5 text-black font-semibold mt-1">
+                </div>
+                <div>
+                    <label class="block text-gray-300">User ID (लॉगिन आयडी):</label>
+                    <input type="text" id="newUserId" placeholder="उदा. ramesh123" class="w-full border rounded p-1.5 text-black font-semibold mt-1">
+                </div>
+                <div>
+                    <label class="block text-gray-300">Password (पासवर्ड):</label>
+                    <input type="password" id="newUserPass" placeholder="Set Password" class="w-full border rounded p-1.5 text-black font-semibold mt-1">
+                </div>
+                <div>
+                    <label class="block text-gray-300">Role (अधिकार):</label>
+                    <select id="newUserRole" class="w-full border rounded p-1.5 text-black font-semibold mt-1">
+                        <option value="STORE">🏭 Store Incharge</option>
+                        <option value="FACTORY">👑 Factory Admin</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex justify-between items-center pt-2">
+                <button onclick="createNewUser()" class="bg-amber-500 hover:bg-amber-600 text-black font-bold px-4 py-1.5 rounded text-xs shadow">
+                    ➕ Create User
+                </button>
+                <div class="text-[11px] text-gray-300">
+                    Total Registered Users: <b id="userCount">0</b>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATS DASHBOARD -->
+        <div id="factoryStats" class="space-y-3">
             <div class="bg-white p-3 rounded-xl shadow flex justify-between items-center flex-wrap gap-3 border">
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-gray-700">🔍 Filter Dashboard by Product:</span>
@@ -73,8 +138,8 @@
             </div>
         </div>
 
-        <!-- FACTORY ADMIN & STORE: PRODUCT WISE SUMMARY -->
-        <div id="productSummaryCard" class="admin-only store-visible bg-white rounded-xl shadow p-4 border space-y-2">
+        <!-- PRODUCT SUMMARY -->
+        <div id="productSummaryCard" class="bg-white rounded-xl shadow p-4 border space-y-2">
             <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider bg-blue-100 text-blue-900 inline-block px-2 py-1 rounded">📊 PRODUCT-WISE STOCK & TRANSIT SUMMARY</h3>
             <div class="overflow-x-auto mt-2">
                 <table class="w-full text-xs text-left border">
@@ -94,8 +159,8 @@
             </div>
         </div>
 
-        <!-- PRODUCTION INWARD & DIRECT STOCK EDIT -->
-        <div id="storeInwardCard" class="admin-only store-visible grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- INWARD & STOCK EDIT -->
+        <div id="storeInwardCard" class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-indigo-900 text-white rounded-xl shadow p-4 border border-indigo-800 md:col-span-2">
                 <div class="flex justify-between items-center border-b border-indigo-700 pb-2 mb-3">
                     <h3 class="text-md font-bold flex items-center gap-2">🏭 Production to Store Inward Entry</h3>
@@ -126,9 +191,8 @@
                 </form>
             </div>
 
-            <!-- MANUAL STOCK EDIT / CORRECTION FEATURE (ADMIN ONLY) -->
             <div id="directStockEditBox" class="admin-only bg-slate-800 text-white rounded-xl shadow p-4 border border-slate-700 md:col-span-1 space-y-2">
-                <h3 class="text-sm font-bold text-amber-400 border-b border-slate-700 pb-1">✏️ Direct Stock Edit / Correction (Admin Only)</h3>
+                <h3 class="text-sm font-bold text-amber-400 border-b border-slate-700 pb-1">✏️ Direct Stock Edit (Admin Only)</h3>
                 <div class="text-xs space-y-2">
                     <div>
                         <label class="block text-gray-300">Select Product:</label>
@@ -150,8 +214,8 @@
             </div>
         </div>
 
-        <!-- FACTORY RETURN VERIFICATION -->
-        <div id="factoryReturnCard" class="admin-only store-visible bg-orange-900 text-white rounded-xl shadow p-4 border border-orange-800 space-y-3">
+        <!-- FACTORY RETURN -->
+        <div id="factoryReturnCard" class="bg-orange-900 text-white rounded-xl shadow p-4 border border-orange-800 space-y-3">
             <div class="flex justify-between items-center border-b border-orange-700 pb-2">
                 <h3 class="text-md font-bold flex items-center gap-2">📦 Factory Return Verification & Damaged Stock Re-Inward</h3>
                 <span class="text-xs bg-orange-700 text-orange-100 px-2 py-0.5 rounded font-mono" id="pendingReturnBadge">0 Pending Verification</span>
@@ -161,11 +225,9 @@
             </div>
         </div>
 
-        <!-- WORKSPACE AREA -->
+        <!-- WORKSPACE -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- DISPATCH FORM -->
-            <div id="dispatchFormCard" class="admin-only store-visible bg-white rounded-xl shadow p-4 border lg:col-span-1 space-y-3">
+            <div id="dispatchFormCard" class="bg-white rounded-xl shadow p-4 border lg:col-span-1 space-y-3">
                 <h3 class="text-md font-bold text-blue-900 border-b pb-2">🚚 Dispatch Entry & Scan</h3>
 
                 <div>
@@ -199,7 +261,6 @@
                     </div>
                 </div>
 
-                <!-- BARCODE GUN SCANNER BOX -->
                 <div class="bg-amber-50 p-3 rounded border border-amber-300 space-y-2">
                     <div class="flex justify-between items-center">
                         <label class="block text-xs font-bold text-amber-900">🔫 BARCODE SCANNER BOX:</label>
@@ -219,11 +280,10 @@
                 </button>
             </div>
 
-            <!-- SHIPMENT LEDGER -->
-            <div id="shipmentsCard" class="bg-white rounded-xl shadow p-4 lg:col-span-3 border space-y-4">
+            <div id="shipmentsCard" class="bg-white rounded-xl shadow p-4 lg:col-span-2 border space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
                     <h3 class="text-md font-bold text-gray-800" id="tableTitle">📋 Delivery Audit & Dispatch Ledger</h3>
-                    <button id="excelBtn" onclick="exportExcel()" class="admin-only store-visible bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-2.5 py-1 rounded font-medium shadow">Export Excel</button>
+                    <button id="excelBtn" onclick="exportExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-2.5 py-1 rounded font-medium shadow">Export Excel</button>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -243,9 +303,7 @@
                     </table>
                 </div>
             </div>
-
         </div>
-
     </div>
 
     <!-- DELIVERY AUDIT MODAL -->
@@ -304,6 +362,12 @@
     <script>
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKFqSkLzT40fU1jQZb5LBqZKRMGwYpNn-9Z4KdMwhc5yMAqmO6Sk4jWEvxj8yrqrF4/exec";
 
+        //  DEFAULT USERS (जर सिस्टीम नवीन असेल तर १ फॅक्टरी ॲडमिन आणि १ स्टोअर युझर)
+        let systemUsers = JSON.parse(localStorage.getItem('ekvira_users')) || [
+            { name: "Factory Owner", userId: "admin", pass: "admin123", role: "FACTORY" },
+            { name: "Store Manager", userId: "store", pass: "store123", role: "STORE" }
+        ];
+
         let productStock = JSON.parse(localStorage.getItem('ekvira_stock')) || {
             "Hydrogoal Inline Pipe": 0,
             "Rain Pipe": 0,
@@ -316,45 +380,119 @@
         let activeShipment = null;
         let html5QrCode = null;
         let isCameraActive = false;
-        let activeRole = 'FACTORY';
+        
+        let loggedInUserObj = JSON.parse(localStorage.getItem('ekvira_active_session')) || null;
+        let idleTimer = null;
 
         const beepAudio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
 
         window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const mode = urlParams.get('mode');
-            
-            // IF DRIVER MODE IS SET IN URL, LOCK ROLE SELECTOR
-            if (mode === 'driver') {
-                document.getElementById('userRole').value = 'DRIVER';
-                document.getElementById('userRole').classList.add('hidden'); // LOCK SWITCHING
+            saveUsersToLocal();
+            if (!loggedInUserObj) {
+                showLoginModal();
+            } else {
+                setupUserSession();
             }
-            
-            switchRole(document.getElementById('userRole').value);
             fetchCloudShipments();
+            setupIdleTimer();
         };
 
-        function switchRole(role) {
-            activeRole = role;
-            const adminElements = document.querySelectorAll('.admin-only');
-            const storeElements = document.querySelectorAll('.store-visible');
-            const directEdit = document.getElementById('directStockEditBox');
-            const shipmentsCard = document.getElementById('shipmentsCard');
+        function saveUsersToLocal() {
+            localStorage.setItem('ekvira_users', JSON.stringify(systemUsers));
+            if(document.getElementById('userCount')) {
+                document.getElementById('userCount').innerText = systemUsers.length;
+            }
+        }
 
-            if (role === 'DRIVER') {
-                adminElements.forEach(el => el.classList.add('hidden'));
-                shipmentsCard.classList.remove('lg:col-span-2');
-                shipmentsCard.classList.add('lg:col-span-3');
-            } else if (role === 'STORE') {
-                adminElements.forEach(el => el.classList.add('hidden'));
-                storeElements.forEach(el => el.classList.remove('hidden'));
-                if(directEdit) directEdit.classList.add('hidden'); // STORE CANNOT DIRECTLY EDIT STOCK
-                shipmentsCard.classList.remove('lg:col-span-3');
-                shipmentsCard.classList.add('lg:col-span-2');
-            } else { // FACTORY ADMIN
+        // --- 15 MINUTES AUTO-LOGOUT TIMER ---
+        function setupIdleTimer() {
+            const resetTimer = () => {
+                if (idleTimer) clearTimeout(idleTimer);
+                idleTimer = setTimeout(() => {
+                    alert("⏰ १५ मिनिटे कोणतीही हालचाल न झाल्यामुळे सिस्टीम सुरक्षिततेसाठी आपोआप लॉक झाली आहे.");
+                    logout();
+                }, 900000); // 15 Min
+            };
+
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onmousedown = resetTimer;
+            window.ontouchstart = resetTimer;
+            window.onclick = resetTimer;
+            window.onkeypress = resetTimer;
+        }
+
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+        }
+
+        function performLogin() {
+            let uId = document.getElementById('loginUserId').value.trim();
+            let pass = document.getElementById('loginPassword').value.trim();
+
+            if (!uId || !pass) {
+                alert("कृपया User ID आणि Password दोन्ही प्रविष्ट करा!");
+                return;
+            }
+
+            let foundUser = systemUsers.find(u => u.userId.toLowerCase() === uId.toLowerCase() && u.pass === pass);
+
+            if (foundUser) {
+                loggedInUserObj = foundUser;
+                localStorage.setItem('ekvira_active_session', JSON.stringify(loggedInUserObj));
+                document.getElementById('loginModal').classList.add('hidden');
+                setupUserSession();
+            } else {
+                alert("❌ अयोग्य User ID किंवा Password! कृपया तपासा.");
+            }
+        }
+
+        function createNewUser() {
+            if (!loggedInUserObj || loggedInUserObj.role !== 'FACTORY') {
+                alert("⚠️ युझर तयार करण्याचा अधिकार फक्त Factory Admin ला आहे!");
+                return;
+            }
+
+            let name = document.getElementById('newStaffName').value.trim();
+            let uId = document.getElementById('newUserId').value.trim();
+            let pass = document.getElementById('newUserPass').value.trim();
+            let role = document.getElementById('newUserRole').value;
+
+            if(!name || !uId || !pass) {
+                alert("कृपया सर्व माहिती (Name, User ID, Password) भरा!");
+                return;
+            }
+
+            // Check duplicate
+            if(systemUsers.some(u => u.userId.toLowerCase() === uId.toLowerCase())) {
+                alert("⚠️ हा User ID आधीपासूनच वापरला गेला आहे. कृपया दुसरा User ID द्या.");
+                return;
+            }
+
+            systemUsers.push({ name: name, userId: uId, pass: pass, role: role });
+            saveUsersToLocal();
+
+            document.getElementById('newStaffName').value = "";
+            document.getElementById('newUserId').value = "";
+            document.getElementById('newUserPass').value = "";
+
+            alert(`✅ नवीन युझर "${name}" (ID: ${uId}) यशस्वीरित्या तयार करण्यात आला!`);
+        }
+
+        function logout() {
+            localStorage.removeItem('ekvira_active_session');
+            loggedInUserObj = null;
+            location.reload();
+        }
+
+        function setupUserSession() {
+            document.getElementById('activeUserDisplay').innerText = `👤 ${loggedInUserObj.name} (${loggedInUserObj.role})`;
+            
+            const adminElements = document.querySelectorAll('.admin-only');
+            if (loggedInUserObj.role === 'FACTORY') {
                 adminElements.forEach(el => el.classList.remove('hidden'));
-                shipmentsCard.classList.remove('lg:col-span-3');
-                shipmentsCard.classList.add('lg:col-span-2');
+            } else {
+                adminElements.forEach(el => el.classList.add('hidden'));
             }
             renderTable();
         }
@@ -402,13 +540,12 @@
             .catch(err => console.error("Cloud Save Error:", err));
         }
 
-        // FIXED DELETE FUNCTION WITH IMMEDIATE UI UPDATE
         function deleteShipment(id) {
-            if(activeRole !== 'FACTORY') {
-                alert("⚠️ एंट्री डिलीट करण्याचा अधिकार फक्त Factory Admin ला आहे!");
+            if(loggedInUserObj.role !== 'FACTORY') {
+                alert("⚠️ ही एंट्री डिलीट करण्याचा अधिकार फक्त Factory Admin ला आहे!");
                 return;
             }
-            if(confirm("⚠️ ही चुकीची एंट्री खरोखर डिलीट करायची आहे का?")) {
+            if(confirm(`⚠️ [User: ${loggedInUserObj.name}] ही एंट्री डिलीट करायची आहे का?`)) {
                 let index = shipments.findIndex(s => s.id === id);
                 if (index !== -1) {
                     shipments.splice(index, 1);
@@ -422,7 +559,7 @@
         }
 
         function applyStockEdit() {
-            if(activeRole !== 'FACTORY') {
+            if(loggedInUserObj.role !== 'FACTORY') {
                 alert("⚠️ हा बदल फक्त Factory Admin करू शकतात!");
                 return;
             }
@@ -438,7 +575,7 @@
             saveLocalStock();
             updateStats();
             document.getElementById('editStockQty').value = "";
-            alert(`✅ ${cat} चा स्टॉक आता ${qty} Pcs वर सेट झाला आहे!`);
+            alert(`✅ ${cat} चा स्टॉक [Updated by: ${loggedInUserObj.name}] ${qty} Pcs वर सेट झाला!`);
         }
 
         function updateStats() {
@@ -514,7 +651,7 @@
             productStock[cat] = (productStock[cat] || 0) + qty;
             saveLocalStock();
             updateStats();
-            alert(`✅ Stock Added!\nProduct: ${cat}\nQty: ${qty} Bundles`);
+            alert(`✅ Stock Added!\nProduct: ${cat}\nQty: ${qty} Bundles\nBy User: ${loggedInUserObj.name}`);
             document.getElementById('mfgInwardForm').reset();
         });
 
@@ -569,6 +706,7 @@
             const shipment = {
                 id: Date.now(),
                 dispatchDateTime: getCurrentFormattedDateTime(),
+                dispatchedBy: loggedInUserObj.name,
                 product: category,
                 dealerName: dealer,
                 dealerPhone: phone,
@@ -580,6 +718,7 @@
                 missingBundles: [],
                 status: 'IN_TRANSIT',
                 deliveredDateTime: '',
+                deliveredBy: '',
                 otp: Math.floor(1000 + Math.random() * 9000).toString(),
                 returnVerified: false
             };
@@ -620,8 +759,7 @@
                     ? `<button onclick="openDeliveryModal(${s.id})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-2.5 py-1 rounded shadow">📲 Delivery Audit</button>`
                     : `<span class="text-[10px] text-gray-500 font-mono">${s.deliveredDateTime || 'Verified'}</span>`;
 
-                // STRICT CHECK: ONLY SHOW DELETE BUTTON IN FACTORY ADMIN MODE
-                let deleteBtn = (activeRole === 'FACTORY') 
+                let deleteBtn = (loggedInUserObj && loggedInUserObj.role === 'FACTORY') 
                     ? `<button onclick="deleteShipment(${s.id})" class="text-red-500 hover:text-red-700 font-bold ml-2 text-xs" title="Delete Entry">🗑️</button>` 
                     : '';
 
@@ -631,6 +769,7 @@
                             <div class="font-bold text-blue-900">${s.dealerName}</div>
                             <div class="text-[10px] text-gray-500">${s.product} | ${s.dispatchDateTime}</div>
                             <div class="text-[10px] font-mono text-gray-600">Driver: ${s.driverName} (${s.vehicleNo})</div>
+                            <div class="text-[10px] text-indigo-700 font-semibold mt-0.5">👤 Entry By: <b>${s.dispatchedBy || 'SYSTEM'}</b></div>
                         </td>
                         <td class="p-2 border text-center font-bold text-gray-800">${s.dispatchedBundles ? s.dispatchedBundles.length : 0} Pcs</td>
                         <td class="p-2 border text-center font-bold text-emerald-600">${s.receivedBundles ? s.receivedBundles.length : 0} Pcs</td>
@@ -640,6 +779,7 @@
                         <td class="p-2 border text-center space-y-1">
                             <div>${statusBadge}</div>
                             <div class="flex justify-center items-center">${actionBtn} ${deleteBtn}</div>
+                            ${s.deliveredBy ? `<div class="text-[9px] text-emerald-700">Audit By: ${s.deliveredBy}</div>` : ''}
                         </td>
                     </tr>
                 `;
@@ -682,7 +822,7 @@
 
             shipment.returnVerified = true;
             syncToCloud("UPDATE", shipment);
-            alert(`✅ Damaged Bundles Verified & Logged in Factory Return System!`);
+            alert(`✅ Damaged Bundles Verified by User: ${loggedInUserObj.name}!`);
         }
 
         function openDeliveryModal(id) {
@@ -769,11 +909,12 @@
             activeShipment.missingBundles = missing;
             activeShipment.status = 'DELIVERED';
             activeShipment.deliveredDateTime = getCurrentFormattedDateTime();
+            activeShipment.deliveredBy = loggedInUserObj.name;
 
             syncToCloud("UPDATE", activeShipment);
 
             closeDeliveryModal();
-            alert("✅ Delivery Successfully Verified & Updated!");
+            alert(`✅ Delivery Verified by User: ${loggedInUserObj.name}!`);
         }
 
         function resendWhatsAppOtp() {
@@ -835,6 +976,7 @@
 
             let exportData = shipments.map(s => ({
                 "Dispatch Date": s.dispatchDateTime,
+                "Dispatched By (User)": s.dispatchedBy || "N/A",
                 "Product": s.product,
                 "Dealer Name": s.dealerName,
                 "Dealer Phone": s.dealerPhone,
@@ -845,7 +987,8 @@
                 "Damaged Qty": s.damagedBundles ? s.damagedBundles.length : 0,
                 "Missing Qty": s.missingBundles ? s.missingBundles.length : 0,
                 "Status": s.status,
-                "Delivery Date": s.deliveredDateTime
+                "Delivery Date": s.deliveredDateTime,
+                "Audited By (User)": s.deliveredBy || "N/A"
             }));
 
             let ws = XLSX.utils.json_to_sheet(exportData);
