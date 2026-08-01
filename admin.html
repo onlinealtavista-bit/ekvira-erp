@@ -29,8 +29,8 @@
             </div>
         </div>
 
-        <!-- FACTORY ADMIN ONLY: GLOBAL PRODUCT FILTER & STATS DASHBOARD -->
-        <div id="factoryStats" class="admin-only space-y-3">
+        <!-- FACTORY ADMIN & STORE: STATS DASHBOARD -->
+        <div id="factoryStats" class="admin-only store-visible space-y-3">
             <div class="bg-white p-3 rounded-xl shadow flex justify-between items-center flex-wrap gap-3 border">
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-gray-700">🔍 Filter Dashboard by Product:</span>
@@ -73,8 +73,8 @@
             </div>
         </div>
 
-        <!-- FACTORY ADMIN ONLY: PRODUCT WISE INVENTORY SUMMARY TABLE -->
-        <div id="productSummaryCard" class="admin-only bg-white rounded-xl shadow p-4 border space-y-2">
+        <!-- FACTORY ADMIN & STORE: PRODUCT WISE SUMMARY -->
+        <div id="productSummaryCard" class="admin-only store-visible bg-white rounded-xl shadow p-4 border space-y-2">
             <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider bg-blue-100 text-blue-900 inline-block px-2 py-1 rounded">📊 PRODUCT-WISE STOCK & TRANSIT SUMMARY</h3>
             <div class="overflow-x-auto mt-2">
                 <table class="w-full text-xs text-left border">
@@ -94,8 +94,8 @@
             </div>
         </div>
 
-        <!-- FACTORY ADMIN ONLY: PRODUCTION INWARD & STOCK EDIT PANEL -->
-        <div id="storeInwardCard" class="admin-only grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- PRODUCTION INWARD & DIRECT STOCK EDIT -->
+        <div id="storeInwardCard" class="admin-only store-visible grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-indigo-900 text-white rounded-xl shadow p-4 border border-indigo-800 md:col-span-2">
                 <div class="flex justify-between items-center border-b border-indigo-700 pb-2 mb-3">
                     <h3 class="text-md font-bold flex items-center gap-2">🏭 Production to Store Inward Entry</h3>
@@ -126,9 +126,9 @@
                 </form>
             </div>
 
-            <!-- MANUAL STOCK EDIT / CORRECTION FEATURE -->
-            <div class="bg-slate-800 text-white rounded-xl shadow p-4 border border-slate-700 md:col-span-1 space-y-2">
-                <h3 class="text-sm font-bold text-amber-400 border-b border-slate-700 pb-1">✏️ Direct Stock Edit / Correction</h3>
+            <!-- MANUAL STOCK EDIT / CORRECTION FEATURE (ADMIN ONLY) -->
+            <div id="directStockEditBox" class="admin-only bg-slate-800 text-white rounded-xl shadow p-4 border border-slate-700 md:col-span-1 space-y-2">
+                <h3 class="text-sm font-bold text-amber-400 border-b border-slate-700 pb-1">✏️ Direct Stock Edit / Correction (Admin Only)</h3>
                 <div class="text-xs space-y-2">
                     <div>
                         <label class="block text-gray-300">Select Product:</label>
@@ -150,8 +150,8 @@
             </div>
         </div>
 
-        <!-- FACTORY ADMIN ONLY: FACTORY RETURNED DAMAGED BUNDLE VERIFICATION -->
-        <div id="factoryReturnCard" class="admin-only bg-orange-900 text-white rounded-xl shadow p-4 border border-orange-800 space-y-3">
+        <!-- FACTORY RETURN VERIFICATION -->
+        <div id="factoryReturnCard" class="admin-only store-visible bg-orange-900 text-white rounded-xl shadow p-4 border border-orange-800 space-y-3">
             <div class="flex justify-between items-center border-b border-orange-700 pb-2">
                 <h3 class="text-md font-bold flex items-center gap-2">📦 Factory Return Verification & Damaged Stock Re-Inward</h3>
                 <span class="text-xs bg-orange-700 text-orange-100 px-2 py-0.5 rounded font-mono" id="pendingReturnBadge">0 Pending Verification</span>
@@ -164,8 +164,8 @@
         <!-- WORKSPACE AREA -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <!-- STORE/FACTORY DISPATCH FORM -->
-            <div id="dispatchFormCard" class="admin-only bg-white rounded-xl shadow p-4 border lg:col-span-1 space-y-3">
+            <!-- DISPATCH FORM -->
+            <div id="dispatchFormCard" class="admin-only store-visible bg-white rounded-xl shadow p-4 border lg:col-span-1 space-y-3">
                 <h3 class="text-md font-bold text-blue-900 border-b pb-2">🚚 Dispatch Entry & Scan</h3>
 
                 <div>
@@ -219,11 +219,11 @@
                 </button>
             </div>
 
-            <!-- SHIPMENT LEDGER (VISIBLE TO DRIVER TOO) -->
+            <!-- SHIPMENT LEDGER -->
             <div id="shipmentsCard" class="bg-white rounded-xl shadow p-4 lg:col-span-3 border space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
                     <h3 class="text-md font-bold text-gray-800" id="tableTitle">📋 Delivery Audit & Dispatch Ledger</h3>
-                    <button id="excelBtn" onclick="exportExcel()" class="admin-only bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-2.5 py-1 rounded font-medium shadow">Export Excel</button>
+                    <button id="excelBtn" onclick="exportExcel()" class="admin-only store-visible bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-2.5 py-1 rounded font-medium shadow">Export Excel</button>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -323,9 +323,13 @@
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const mode = urlParams.get('mode');
+            
+            // IF DRIVER MODE IS SET IN URL, LOCK ROLE SELECTOR
             if (mode === 'driver') {
                 document.getElementById('userRole').value = 'DRIVER';
+                document.getElementById('userRole').classList.add('hidden'); // LOCK SWITCHING
             }
+            
             switchRole(document.getElementById('userRole').value);
             fetchCloudShipments();
         };
@@ -333,14 +337,21 @@
         function switchRole(role) {
             activeRole = role;
             const adminElements = document.querySelectorAll('.admin-only');
-            const dispatchCard = document.getElementById('dispatchFormCard');
+            const storeElements = document.querySelectorAll('.store-visible');
+            const directEdit = document.getElementById('directStockEditBox');
             const shipmentsCard = document.getElementById('shipmentsCard');
 
             if (role === 'DRIVER') {
                 adminElements.forEach(el => el.classList.add('hidden'));
                 shipmentsCard.classList.remove('lg:col-span-2');
                 shipmentsCard.classList.add('lg:col-span-3');
-            } else {
+            } else if (role === 'STORE') {
+                adminElements.forEach(el => el.classList.add('hidden'));
+                storeElements.forEach(el => el.classList.remove('hidden'));
+                if(directEdit) directEdit.classList.add('hidden'); // STORE CANNOT DIRECTLY EDIT STOCK
+                shipmentsCard.classList.remove('lg:col-span-3');
+                shipmentsCard.classList.add('lg:col-span-2');
+            } else { // FACTORY ADMIN
                 adminElements.forEach(el => el.classList.remove('hidden'));
                 shipmentsCard.classList.remove('lg:col-span-3');
                 shipmentsCard.classList.add('lg:col-span-2');
@@ -392,6 +403,10 @@
         }
 
         function deleteShipment(id) {
+            if(activeRole !== 'FACTORY') {
+                alert("⚠️ एंट्री डिलीट करण्याचा अधिकार फक्त Factory Admin ला आहे!");
+                return;
+            }
             if(confirm("⚠️ ही चुकीची एंट्री खरोखर डिलीट करायची आहे का?")) {
                 syncToCloud("DELETE", null, id);
             }
@@ -592,7 +607,7 @@
                     ? `<button onclick="openDeliveryModal(${s.id})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-2.5 py-1 rounded shadow">📲 Delivery Audit</button>`
                     : `<span class="text-[10px] text-gray-500 font-mono">${s.deliveredDateTime || 'Verified'}</span>`;
 
-                let deleteBtn = activeRole === 'DRIVER' ? '' : `<button onclick="deleteShipment(${s.id})" class="text-red-500 hover:text-red-700 font-bold ml-2 text-xs" title="Delete Entry">🗑️</button>`;
+                let deleteBtn = activeRole === 'FACTORY' ? `<button onclick="deleteShipment(${s.id})" class="text-red-500 hover:text-red-700 font-bold ml-2 text-xs" title="Delete Entry">🗑️</button>` : '';
 
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-slate-50">
