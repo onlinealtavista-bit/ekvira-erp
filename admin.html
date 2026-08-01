@@ -20,10 +20,6 @@
             </div>
             <div class="flex items-center gap-2 flex-wrap" id="roleSelectorBox">
                 <span id="syncStatus" class="text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse">☁️ Connecting...</span>
-                
-                <button id="resetDemoBtn" onclick="clearAllDemoData()" class="admin-only bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3 py-1.5 rounded shadow flex items-center gap-1">
-                    🗑️ Reset All Demo Data
-                </button>
 
                 <select id="userRole" onchange="switchRole(this.value)" class="bg-blue-800 text-white text-xs p-2 rounded border border-blue-600 font-semibold cursor-pointer">
                     <option value="FACTORY">Factory Admin View (All Controls)</option>
@@ -325,7 +321,6 @@
         const beepAudio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
 
         window.onload = function() {
-            // Check URL parameters for mode=driver
             const urlParams = new URLSearchParams(window.location.search);
             const mode = urlParams.get('mode');
             if (mode === 'driver') {
@@ -394,26 +389,6 @@
                 fetchCloudShipments();
             })
             .catch(err => console.error("Cloud Save Error:", err));
-        }
-
-        function clearAllDemoData() {
-            if(confirm("⚠️ नक्की सर्व Demo Entries Google Sheet मधून हटवायच्या आहेत का?")) {
-                document.getElementById('syncStatus').innerText = "🗑️ Clearing Google Sheet...";
-                fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "CLEAR_ALL" })
-                })
-                .then(res => res.json())
-                .then(() => {
-                    shipments = [];
-                    productStock = { "Hydrogoal Inline Pipe": 0, "Rain Pipe": 0, "Flat Inline Pipe": 0, "Submain Pipe": 0 };
-                    saveLocalStock();
-                    updateStats();
-                    renderTable();
-                    renderFactoryReturns();
-                    alert("✅ सर्व डेटा यशस्वीपणे Zero झाला आहे!");
-                });
-            }
         }
 
         function deleteShipment(id) {
