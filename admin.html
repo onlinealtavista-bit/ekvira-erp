@@ -10,92 +10,27 @@
 </head>
 <body class="bg-slate-100 p-2 sm:p-6 font-sans">
 
-    <!-- LOGIN MODAL -->
-    <div id="loginModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex justify-center items-center p-4 z-50">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-gray-200">
-            <div class="text-center space-y-1">
-                <div class="w-12 h-12 bg-blue-900 text-white rounded-full flex items-center justify-center mx-auto text-xl font-bold shadow">🔐</div>
-                <h2 class="text-xl font-bold text-gray-800">SHRI EKVIRA MFG ERP</h2>
-                <p class="text-xs text-gray-500">कृपया तुमचा User ID आणि Password प्रविष्ट करा</p>
-            </div>
-
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">User ID / युझर आयडी:</label>
-                    <input type="text" id="loginUserId" placeholder="उदा. admin / store1" class="w-full border rounded-lg p-2.5 text-xs font-semibold focus:ring-2 focus:ring-blue-600">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Password / पासवर्ड:</label>
-                    <input type="password" id="loginPassword" placeholder="Enter Password" class="w-full border rounded-lg p-2.5 text-xs font-semibold focus:ring-2 focus:ring-blue-600">
-                </div>
-
-                <button onclick="performLogin()" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-2.5 rounded-lg text-xs transition shadow-lg">
-                    🔒 System Login
-                </button>
-            </div>
-        </div>
-    </div>
-
     <div class="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         
         <!-- HEADER -->
         <div class="bg-blue-900 text-white rounded-xl shadow-md p-4 flex justify-between items-center flex-wrap gap-2">
             <div>
                 <h2 class="text-xl sm:text-2xl font-bold">SHRI EKVIRA MFG COATS PVT. LTD.</h2>
-                <p class="text-xs text-blue-200">Mobile Camera Audit & Net Delivery ERP</p>
+                <p class="text-xs text-blue-200" id="headerSubtitle">Mobile Camera Audit & Net Delivery ERP</p>
             </div>
-            <div class="flex items-center gap-3 flex-wrap">
+            <div class="flex items-center gap-2 flex-wrap" id="roleSelectorBox">
                 <span id="syncStatus" class="text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse">☁️ Connecting...</span>
-                
-                <div id="userBadge" class="bg-blue-800 border border-blue-600 text-white px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2">
-                    <span id="activeUserDisplay">👤 Guest</span>
-                    <button onclick="logout()" class="text-red-300 hover:text-red-100 font-bold text-[11px] underline ml-2">Logout</button>
-                </div>
+
+                <select id="userRole" onchange="switchRole(this.value)" class="bg-blue-800 text-white text-xs p-2 rounded border border-blue-600 font-semibold cursor-pointer">
+                    <option value="FACTORY">Factory Admin View (All Controls)</option>
+                    <option value="STORE">🏭 Store Incharge View</option>
+                    <option value="DRIVER">🚚 Driver Mobile View</option>
+                </select>
             </div>
         </div>
 
-        <!-- FACTORY ADMIN ONLY: USER MANAGEMENT PANEL -->
-        <div id="userManagementCard" class="admin-only hidden bg-slate-800 text-white rounded-xl shadow p-4 border border-slate-700 space-y-3">
-            <h3 class="text-sm font-bold text-amber-400 border-b border-slate-700 pb-1 flex justify-between items-center">
-                <span>👥 User Management (Add System Users)</span>
-                <span class="text-[10px] text-gray-300 font-normal">*फक्त Factory Admin साठी</span>
-            </h3>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-                <div>
-                    <label class="block text-gray-300">Staff Name (नाव):</label>
-                    <input type="text" id="newStaffName" placeholder="उदा. Ramesh Patil" class="w-full border rounded p-1.5 text-black font-semibold mt-1">
-                </div>
-                <div>
-                    <label class="block text-gray-300">User ID (लॉगिन आयडी):</label>
-                    <input type="text" id="newUserId" placeholder="उदा. ramesh123" class="w-full border rounded p-1.5 text-black font-semibold mt-1">
-                </div>
-                <div>
-                    <label class="block text-gray-300">Password (पासवर्ड):</label>
-                    <input type="password" id="newUserPass" placeholder="Set Password" class="w-full border rounded p-1.5 text-black font-semibold mt-1">
-                </div>
-                <div>
-                    <label class="block text-gray-300">Role (अधिकार):</label>
-                    <select id="newUserRole" class="w-full border rounded p-1.5 text-black font-semibold mt-1">
-                        <option value="STORE">🏭 Store Incharge</option>
-                        <option value="FACTORY">👑 Factory Admin</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="flex justify-between items-center pt-2">
-                <button onclick="createNewUser()" class="bg-amber-500 hover:bg-amber-600 text-black font-bold px-4 py-1.5 rounded text-xs shadow">
-                    ➕ Create User
-                </button>
-                <div class="text-[11px] text-gray-300">
-                    Total Registered Users: <b id="userCount">0</b>
-                </div>
-            </div>
-        </div>
-
-        <!-- STATS DASHBOARD -->
-        <div id="factoryStats" class="space-y-3">
+        <!-- FACTORY ADMIN & STORE: STATS DASHBOARD -->
+        <div id="factoryStats" class="admin-only store-visible space-y-3">
             <div class="bg-white p-3 rounded-xl shadow flex justify-between items-center flex-wrap gap-3 border">
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-gray-700">🔍 Filter Dashboard by Product:</span>
@@ -138,8 +73,8 @@
             </div>
         </div>
 
-        <!-- PRODUCT SUMMARY -->
-        <div id="productSummaryCard" class="bg-white rounded-xl shadow p-4 border space-y-2">
+        <!-- FACTORY ADMIN & STORE: PRODUCT WISE SUMMARY -->
+        <div id="productSummaryCard" class="admin-only store-visible bg-white rounded-xl shadow p-4 border space-y-2">
             <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider bg-blue-100 text-blue-900 inline-block px-2 py-1 rounded">📊 PRODUCT-WISE STOCK & TRANSIT SUMMARY</h3>
             <div class="overflow-x-auto mt-2">
                 <table class="w-full text-xs text-left border">
@@ -159,8 +94,8 @@
             </div>
         </div>
 
-        <!-- INWARD & STOCK EDIT -->
-        <div id="storeInwardCard" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- PRODUCTION INWARD & DIRECT STOCK EDIT -->
+        <div id="storeInwardCard" class="admin-only store-visible grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-indigo-900 text-white rounded-xl shadow p-4 border border-indigo-800 md:col-span-2">
                 <div class="flex justify-between items-center border-b border-indigo-700 pb-2 mb-3">
                     <h3 class="text-md font-bold flex items-center gap-2">🏭 Production to Store Inward Entry</h3>
@@ -191,8 +126,9 @@
                 </form>
             </div>
 
+            <!-- MANUAL STOCK EDIT / CORRECTION FEATURE (ADMIN ONLY) -->
             <div id="directStockEditBox" class="admin-only bg-slate-800 text-white rounded-xl shadow p-4 border border-slate-700 md:col-span-1 space-y-2">
-                <h3 class="text-sm font-bold text-amber-400 border-b border-slate-700 pb-1">✏️ Direct Stock Edit (Admin Only)</h3>
+                <h3 class="text-sm font-bold text-amber-400 border-b border-slate-700 pb-1">✏️ Direct Stock Edit / Correction (Admin Only)</h3>
                 <div class="text-xs space-y-2">
                     <div>
                         <label class="block text-gray-300">Select Product:</label>
@@ -214,8 +150,8 @@
             </div>
         </div>
 
-        <!-- FACTORY RETURN -->
-        <div id="factoryReturnCard" class="bg-orange-900 text-white rounded-xl shadow p-4 border border-orange-800 space-y-3">
+        <!-- FACTORY RETURN VERIFICATION -->
+        <div id="factoryReturnCard" class="admin-only store-visible bg-orange-900 text-white rounded-xl shadow p-4 border border-orange-800 space-y-3">
             <div class="flex justify-between items-center border-b border-orange-700 pb-2">
                 <h3 class="text-md font-bold flex items-center gap-2">📦 Factory Return Verification & Damaged Stock Re-Inward</h3>
                 <span class="text-xs bg-orange-700 text-orange-100 px-2 py-0.5 rounded font-mono" id="pendingReturnBadge">0 Pending Verification</span>
@@ -225,9 +161,11 @@
             </div>
         </div>
 
-        <!-- WORKSPACE -->
+        <!-- WORKSPACE AREA -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div id="dispatchFormCard" class="bg-white rounded-xl shadow p-4 border lg:col-span-1 space-y-3">
+            
+            <!-- DISPATCH FORM -->
+            <div id="dispatchFormCard" class="admin-only store-visible bg-white rounded-xl shadow p-4 border lg:col-span-1 space-y-3">
                 <h3 class="text-md font-bold text-blue-900 border-b pb-2">🚚 Dispatch Entry & Scan</h3>
 
                 <div>
@@ -261,6 +199,7 @@
                     </div>
                 </div>
 
+                <!-- BARCODE GUN SCANNER BOX -->
                 <div class="bg-amber-50 p-3 rounded border border-amber-300 space-y-2">
                     <div class="flex justify-between items-center">
                         <label class="block text-xs font-bold text-amber-900">🔫 BARCODE SCANNER BOX:</label>
@@ -280,10 +219,11 @@
                 </button>
             </div>
 
-            <div id="shipmentsCard" class="bg-white rounded-xl shadow p-4 lg:col-span-2 border space-y-4">
+            <!-- SHIPMENT LEDGER -->
+            <div id="shipmentsCard" class="bg-white rounded-xl shadow p-4 lg:col-span-3 border space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
                     <h3 class="text-md font-bold text-gray-800" id="tableTitle">📋 Delivery Audit & Dispatch Ledger</h3>
-                    <button id="excelBtn" onclick="exportExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-2.5 py-1 rounded font-medium shadow">Export Excel</button>
+                    <button id="excelBtn" onclick="exportExcel()" class="admin-only store-visible bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-2.5 py-1 rounded font-medium shadow">Export Excel</button>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -303,7 +243,9 @@
                     </table>
                 </div>
             </div>
+
         </div>
+
     </div>
 
     <!-- DELIVERY AUDIT MODAL -->
@@ -360,12 +302,7 @@
     </div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwlzpT_xjFUllMKy4n0Q8Uu42VA8yave2HGQZ8ze-xnUJjuJiakNVSxY8LN47kVCncw/exec";
-
-        let systemUsers = JSON.parse(localStorage.getItem('ekvira_users')) || [
-            { name: "Factory Owner", userId: "admin", pass: "admin123", role: "FACTORY" },
-            { name: "Store Manager", userId: "store", pass: "store123", role: "STORE" }
-        ];
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYPloVjcO3EK8Jupnda1_PvdJpd67Ua7aa2FVu_S4mSSL0rVqnXg4YnVQxl5RImpfM/exec";
 
         let productStock = JSON.parse(localStorage.getItem('ekvira_stock')) || {
             "Hydrogoal Inline Pipe": 0,
@@ -379,115 +316,45 @@
         let activeShipment = null;
         let html5QrCode = null;
         let isCameraActive = false;
-        
-        let loggedInUserObj = JSON.parse(localStorage.getItem('ekvira_active_session')) || null;
-        let idleTimer = null;
+        let activeRole = 'FACTORY';
+
+        const beepAudio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
 
         window.onload = function() {
-            saveUsersToLocal();
-            if (!loggedInUserObj) {
-                showLoginModal();
-            } else {
-                setupUserSession();
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+            
+            // IF DRIVER MODE IS SET IN URL, LOCK ROLE SELECTOR
+            if (mode === 'driver') {
+                document.getElementById('userRole').value = 'DRIVER';
+                document.getElementById('userRole').classList.add('hidden'); // LOCK SWITCHING
             }
+            
+            switchRole(document.getElementById('userRole').value);
             fetchCloudShipments();
-            setupIdleTimer();
         };
 
-        function saveUsersToLocal() {
-            localStorage.setItem('ekvira_users', JSON.stringify(systemUsers));
-            if(document.getElementById('userCount')) {
-                document.getElementById('userCount').innerText = systemUsers.length;
-            }
-        }
-
-        function setupIdleTimer() {
-            const resetTimer = () => {
-                if (idleTimer) clearTimeout(idleTimer);
-                idleTimer = setTimeout(() => {
-                    alert("⏰ १५ मिनिटे कोणतीही हालचाल न झाल्यामुळे सिस्टीम सुरक्षिततेसाठी आपोआप लॉक झाली आहे.");
-                    logout();
-                }, 900000);
-            };
-
-            window.onload = resetTimer;
-            window.onmousemove = resetTimer;
-            window.onmousedown = resetTimer;
-            window.ontouchstart = resetTimer;
-            window.onclick = resetTimer;
-            window.onkeypress = resetTimer;
-        }
-
-        function showLoginModal() {
-            document.getElementById('loginModal').classList.remove('hidden');
-        }
-
-        function performLogin() {
-            let uId = document.getElementById('loginUserId').value.trim();
-            let pass = document.getElementById('loginPassword').value.trim();
-
-            if (!uId || !pass) {
-                alert("कृपया User ID आणि Password दोन्ही प्रविष्ट करा!");
-                return;
-            }
-
-            let foundUser = systemUsers.find(u => u.userId.toLowerCase() === uId.toLowerCase() && u.pass === pass);
-
-            if (foundUser) {
-                loggedInUserObj = foundUser;
-                localStorage.setItem('ekvira_active_session', JSON.stringify(loggedInUserObj));
-                document.getElementById('loginModal').classList.add('hidden');
-                setupUserSession();
-            } else {
-                alert("❌ अयोग्य User ID किंवा Password! कृपया तपासा.");
-            }
-        }
-
-        function createNewUser() {
-            if (!loggedInUserObj || loggedInUserObj.role !== 'FACTORY') {
-                alert("⚠️ युझर तयार करण्याचा अधिकार फक्त Factory Admin ला आहे!");
-                return;
-            }
-
-            let name = document.getElementById('newStaffName').value.trim();
-            let uId = document.getElementById('newUserId').value.trim();
-            let pass = document.getElementById('newUserPass').value.trim();
-            let role = document.getElementById('newUserRole').value;
-
-            if(!name || !uId || !pass) {
-                alert("कृपया सर्व माहिती भरा!");
-                return;
-            }
-
-            if(systemUsers.some(u => u.userId.toLowerCase() === uId.toLowerCase())) {
-                alert("⚠️ हा User ID आधीपासूनच वापरला गेला आहे.");
-                return;
-            }
-
-            systemUsers.push({ name: name, userId: uId, pass: pass, role: role });
-            saveUsersToLocal();
-
-            document.getElementById('newStaffName').value = "";
-            document.getElementById('newUserId').value = "";
-            document.getElementById('newUserPass').value = "";
-
-            alert(`✅ नवीन युझर "${name}" तयार करण्यात आला!`);
-        }
-
-        function logout() {
-            localStorage.removeItem('ekvira_active_session');
-            loggedInUserObj = null;
-            location.reload();
-        }
-
-        function setupUserSession() {
-            document.getElementById('activeUserDisplay').innerText = `👤 ${loggedInUserObj.name} (${loggedInUserObj.role})`;
-            
+        function switchRole(role) {
+            activeRole = role;
             const adminElements = document.querySelectorAll('.admin-only');
-            if (loggedInUserObj.role === 'FACTORY') {
-                adminElements.forEach(el => el.classList.remove('hidden'));
-            } else {
+            const storeElements = document.querySelectorAll('.store-visible');
+            const directEdit = document.getElementById('directStockEditBox');
+            const shipmentsCard = document.getElementById('shipmentsCard');
+
+            if (role === 'DRIVER') {
                 adminElements.forEach(el => el.classList.add('hidden'));
+                shipmentsCard.classList.remove('lg:col-span-2');
+                shipmentsCard.classList.add('lg:col-span-3');
+            } else if (role === 'STORE') {
+                adminElements.forEach(el => el.classList.add('hidden'));
+                storeElements.forEach(el => el.classList.remove('hidden'));
+                if(directEdit) directEdit.classList.add('hidden'); // STORE CANNOT DIRECTLY EDIT STOCK
+                shipmentsCard.classList.remove('lg:col-span-3');
+                shipmentsCard.classList.add('lg:col-span-2');
+            } else { // FACTORY ADMIN
+                adminElements.forEach(el => el.classList.remove('hidden'));
+                shipmentsCard.classList.remove('lg:col-span-3');
+                shipmentsCard.classList.add('lg:col-span-2');
             }
             renderTable();
         }
@@ -496,101 +363,56 @@
             localStorage.setItem('ekvira_stock', JSON.stringify(productStock));
         }
 
-        function fetchCloudShipments() {
-            const syncStatusEl = document.getElementById('syncStatus');
-            if (syncStatusEl) {
-                syncStatusEl.innerText = "☁️ Connecting...";
-                syncStatusEl.className = "text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse";
-            }
+        function getCurrentFormattedDateTime() {
+            const now = new Date();
+            return `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+        }
 
+        function fetchCloudShipments() {
+            document.getElementById('syncStatus').innerText = "☁️ Syncing Cloud...";
             fetch(GOOGLE_SCRIPT_URL)
-            .then(res => res.json())
-            .then(data => {
-                shipments = data || [];
-                updateStats();
-                renderTable();
-                renderFactoryReturns();
-                if (syncStatusEl) {
-                    syncStatusEl.innerText = "✅ Cloud Connected";
-                    syncStatusEl.className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
-                }
-            })
-            .catch(err => {
-                console.error("Cloud Error:", err);
-                if (syncStatusEl) {
-                    syncStatusEl.innerText = "⚠️ Offline Mode";
-                    syncStatusEl.className = "text-[10px] bg-red-600 text-white font-bold px-2 py-1 rounded";
-                }
-            });
+                .then(res => res.json())
+                .then(data => {
+                    shipments = data || [];
+                    updateStats();
+                    renderTable();
+                    renderFactoryReturns();
+                    document.getElementById('syncStatus').innerText = "✅ Cloud Connected";
+                    document.getElementById('syncStatus').className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('syncStatus').innerText = "⚠️ Offline Mode";
+                    document.getElementById('syncStatus').className = "text-[10px] bg-red-600 text-white font-bold px-2 py-1 rounded";
+                });
         }
 
         function syncToCloud(actionType, shipmentData, extraId) {
-            const syncStatusEl = document.getElementById('syncStatus');
-            if (syncStatusEl) {
-                syncStatusEl.innerText = "☁️ Saving to Cloud...";
-                syncStatusEl.className = "text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse";
-            }
-
+            document.getElementById('syncStatus').innerText = "☁️ Saving to Cloud...";
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8"
-                },
                 body: JSON.stringify({ action: actionType, shipment: shipmentData, id: extraId })
             })
             .then(res => res.json())
-            .then(resData => {
-                if (syncStatusEl) {
-                    syncStatusEl.innerText = "✅ Saved to Sheet";
-                    syncStatusEl.className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
-                }
+            .then(() => {
+                document.getElementById('syncStatus').innerText = "✅ Saved to Sheet";
+                document.getElementById('syncStatus').className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
                 fetchCloudShipments();
             })
-            .catch(err => {
-                console.error("Save Error:", err);
-                setTimeout(fetchCloudShipments, 1500);
-            });
+            .catch(err => console.error("Cloud Save Error:", err));
         }
 
         function deleteShipment(id) {
-            if (!loggedInUserObj || loggedInUserObj.role !== 'FACTORY') {
-                alert("⚠️ ही एंट्री डिलीट करण्याचा अधिकार फक्त Factory Admin ला आहे!");
+            if(activeRole !== 'FACTORY') {
+                alert("⚠️ एंट्री डिलीट करण्याचा अधिकार फक्त Factory Admin ला आहे!");
                 return;
             }
-
-            const targetId = Number(id);
-
-            if (confirm(`⚠️ [User: ${loggedInUserObj.name}] ही एंट्री डिलीट करायची आहे का?`)) {
-                let index = shipments.findIndex(s => Number(s.id) === targetId);
-                
-                if (index !== -1) {
-                    let deletedShipment = shipments[index];
-
-                    if (deletedShipment.product && deletedShipment.dispatchedBundles) {
-                        let qtyToRestore = deletedShipment.dispatchedBundles.length;
-                        productStock[deletedShipment.product] = (productStock[deletedShipment.product] || 0) + qtyToRestore;
-                        saveLocalStock();
-                    }
-
-                    shipments.splice(index, 1);
-                    renderTable();
-                    updateStats();
-                    renderFactoryReturns();
-
-                    syncToCloud("DELETE", null, targetId);
-
-                    alert("✅ एंट्री यशस्वीरित्या डिलीट केली!");
-                } else {
-                    alert("⚠️ एंट्री सापडली नाही!");
-                }
+            if(confirm("⚠️ ही चुकीची एंट्री खरोखर डिलीट करायची आहे का?")) {
+                syncToCloud("DELETE", null, id);
             }
         }
 
         function applyStockEdit() {
-            if(loggedInUserObj.role !== 'FACTORY') {
-                alert("⚠️ हा बदल फक्त Factory Admin करू शकतात!");
-                return;
-            }
             let cat = document.getElementById('editStockCategory').value;
             let qty = parseInt(document.getElementById('editStockQty').value);
 
@@ -603,19 +425,417 @@
             saveLocalStock();
             updateStats();
             document.getElementById('editStockQty').value = "";
-            alert(`✅ ${cat} चा स्टॉक ${qty} Pcs वर सेट झाला!`);
+            alert(`✅ ${cat} चा स्टॉक आता ${qty} Pcs वर सेट झाला आहे!`);
         }
 
         function updateStats() {
-            // Stat update logic
+            let filter = document.getElementById('globalProductFilter') ? document.getElementById('globalProductFilter').value : 'ALL';
+            let totalStore = 0, totalDispatched = 0, totalTransit = 0, totalDelivered = 0, totalDamaged = 0, totalMissing = 0;
+
+            let summaryBody = document.getElementById('productSummaryBody');
+            if(summaryBody) summaryBody.innerHTML = "";
+
+            const allCategories = [
+                "Hydrogoal Inline Pipe",
+                "Rain Pipe",
+                "Flat Inline Pipe",
+                "Submain Pipe"
+            ];
+
+            allCategories.forEach(cat => {
+                let catStore = productStock[cat] || 0;
+                let catDisp = 0, catTransit = 0, catDeliv = 0, catDamaged = 0, catMissing = 0;
+
+                shipments.forEach(s => {
+                    if(s.product === cat) {
+                        let qty = s.dispatchedBundles ? s.dispatchedBundles.length : 0;
+                        catDisp += qty;
+                        if(s.status === 'IN_TRANSIT') {
+                            catTransit += qty;
+                        } else {
+                            catDeliv += s.receivedBundles ? s.receivedBundles.length : 0;
+                            catDamaged += s.damagedBundles ? s.damagedBundles.length : 0;
+                            catMissing += s.missingBundles ? s.missingBundles.length : 0;
+                        }
+                    }
+                });
+
+                if(summaryBody) {
+                    summaryBody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-2 border font-semibold text-gray-800">${cat}</td>
+                            <td class="p-2 border text-center font-bold text-indigo-700">${catStore} Pcs</td>
+                            <td class="p-2 border text-center font-semibold text-gray-700">${catDisp} Pcs</td>
+                            <td class="p-2 border text-center font-semibold text-amber-600">${catTransit} Pcs</td>
+                            <td class="p-2 border text-center font-bold text-emerald-600">${catDeliv} Pcs</td>
+                            <td class="p-2 border text-center font-semibold text-orange-600">${catDamaged} Pcs</td>
+                            <td class="p-2 border text-center font-semibold text-red-600">${catMissing} Pcs</td>
+                        </tr>
+                    `;
+                }
+
+                if(filter === 'ALL' || filter === cat) {
+                    totalStore += catStore;
+                    totalDispatched += catDisp;
+                    totalTransit += catTransit;
+                    totalDelivered += catDeliv;
+                    totalDamaged += catDamaged;
+                    totalMissing += catMissing;
+                }
+            });
+
+            if(document.getElementById('statStoreStock')) document.getElementById('statStoreStock').innerText = totalStore + " Pcs";
+            if(document.getElementById('statDispatched')) document.getElementById('statDispatched').innerText = totalDispatched + " Pcs";
+            if(document.getElementById('statTransit')) document.getElementById('statTransit').innerText = totalTransit + " Pcs";
+            if(document.getElementById('statDelivered')) document.getElementById('statDelivered').innerText = totalDelivered + " Pcs";
+            if(document.getElementById('statDamaged')) document.getElementById('statDamaged').innerText = totalDamaged + " Pcs";
+            if(document.getElementById('statMissing')) document.getElementById('statMissing').innerText = totalMissing + " Pcs";
+        }
+
+        document.getElementById('mfgInwardForm').addEventListener('submit', function(e){
+            e.preventDefault();
+            let cat = document.getElementById('mfgCategory').value;
+            let qty = parseInt(document.getElementById('mfgQty').value) || 0;
+            if(qty <= 0) return;
+
+            productStock[cat] = (productStock[cat] || 0) + qty;
+            saveLocalStock();
+            updateStats();
+            alert(`✅ Stock Added!\nProduct: ${cat}\nQty: ${qty} Bundles`);
+            document.getElementById('mfgInwardForm').reset();
+        });
+
+        const gunInput = document.getElementById('gunBarcodeInput');
+        if(gunInput) {
+            gunInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    let val = this.value.trim().toUpperCase();
+                    if (val !== "") {
+                        if (!currentScannedBundles.includes(val)) {
+                            currentScannedBundles.push(val);
+                            renderScannedTags();
+                            try { beepAudio.play(); } catch(err){}
+                        }
+                    }
+                    this.value = ""; 
+                }
+            });
+        }
+
+        function renderScannedTags() {
+            let container = document.getElementById('scannedBundleTags');
+            if(!container) return;
+            container.innerHTML = "";
+            currentScannedBundles.forEach((b, index) => {
+                container.innerHTML += `
+                    <span class="bg-blue-100 text-blue-900 text-[10px] font-mono font-bold px-2 py-1 rounded flex items-center gap-1">
+                        ${b} <button onclick="removeBundle(${index})" class="text-red-500 font-bold hover:text-red-700">✕</button>
+                    </span>`;
+            });
+            document.getElementById('scanCount').innerText = `${currentScannedBundles.length} Bundles`;
+        }
+
+        function removeBundle(index) {
+            currentScannedBundles.splice(index, 1);
+            renderScannedTags();
+        }
+
+        function dispatchShipment() {
+            let category = document.getElementById('prodCategory').value;
+            let dealer = document.getElementById('dealerName').value.trim();
+            let phone = document.getElementById('dealerPhone').value.trim();
+            let driver = document.getElementById('driverName').value.trim();
+            let vehicle = document.getElementById('vehicleNo').value.trim().toUpperCase();
+
+            if(!dealer || !phone || currentScannedBundles.length === 0) {
+                alert("कृपया Dealer Details भरा आणि किमान १ Unique Bundle Scan करा!");
+                return;
+            }
+
+            const shipment = {
+                id: Date.now(),
+                dispatchDateTime: getCurrentFormattedDateTime(),
+                product: category,
+                dealerName: dealer,
+                dealerPhone: phone,
+                driverName: driver,
+                vehicleNo: vehicle,
+                dispatchedBundles: [...currentScannedBundles],
+                receivedBundles: [],
+                damagedBundles: [],
+                missingBundles: [],
+                status: 'IN_TRANSIT',
+                deliveredDateTime: '',
+                otp: Math.floor(1000 + Math.random() * 9000).toString(),
+                returnVerified: false
+            };
+
+            productStock[category] = Math.max(0, (productStock[category] || 0) - shipment.dispatchedBundles.length);
+            saveLocalStock();
+
+            syncToCloud("ADD", shipment);
+
+            currentScannedBundles = [];
+            renderScannedTags();
+
+            triggerWhatsAppMessage(shipment);
+        }
+
+        function triggerWhatsAppMessage(shipment) {
+            let msg = `🚚 *SHRI EKVIRA MFG COATS PVT LTD*\n*DISPATCH NOTICE*\n\nDear Dealer: ${shipment.dealerName}\nProduct: ${shipment.product}\nDispatched Qty: ${shipment.dispatchedBundles.length} Bundles\nVehicle No: ${shipment.vehicleNo}\nDriver: ${shipment.driverName}\n\n🔑 *Delivery OTP: ${shipment.otp}*\n\nPlease share this OTP with driver upon verifying physical delivery.`;
+            let url = `https://api.whatsapp.com/send?phone=91${shipment.dealerPhone}&text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
         }
 
         function renderTable() {
-            // Table rendering logic
+            let tbody = document.getElementById('dispatchTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = "";
+
+            if(shipments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">कोणतीही Dispatch Entry उपलब्ध नाही.</td></tr>`;
+                return;
+            }
+
+            shipments.forEach(s => {
+                let statusBadge = s.status === 'DELIVERED' 
+                    ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">✅ Delivered</span>`
+                    : `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">🚚 In-Transit</span>`;
+
+                let actionBtn = s.status === 'IN_TRANSIT'
+                    ? `<button onclick="openDeliveryModal(${s.id})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-2.5 py-1 rounded shadow">📲 Delivery Audit</button>`
+                    : `<span class="text-[10px] text-gray-500 font-mono">${s.deliveredDateTime || 'Verified'}</span>`;
+
+                let deleteBtn = activeRole === 'FACTORY' ? `<button onclick="deleteShipment(${s.id})" class="text-red-500 hover:text-red-700 font-bold ml-2 text-xs" title="Delete Entry">🗑️</button>` : '';
+
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-2 border">
+                            <div class="font-bold text-blue-900">${s.dealerName}</div>
+                            <div class="text-[10px] text-gray-500">${s.product} | ${s.dispatchDateTime}</div>
+                            <div class="text-[10px] font-mono text-gray-600">Driver: ${s.driverName} (${s.vehicleNo})</div>
+                        </td>
+                        <td class="p-2 border text-center font-bold text-gray-800">${s.dispatchedBundles ? s.dispatchedBundles.length : 0} Pcs</td>
+                        <td class="p-2 border text-center font-bold text-emerald-600">${s.receivedBundles ? s.receivedBundles.length : 0} Pcs</td>
+                        <td class="p-2 border text-center font-semibold text-orange-600">
+                            ${s.damagedBundles ? s.damagedBundles.length : 0} Dmg / ${s.missingBundles ? s.missingBundles.length : 0} Miss
+                        </td>
+                        <td class="p-2 border text-center space-y-1">
+                            <div>${statusBadge}</div>
+                            <div class="flex justify-center items-center">${actionBtn} ${deleteBtn}</div>
+                        </td>
+                    </tr>
+                `;
+            });
         }
 
         function renderFactoryReturns() {
-            // Returns rendering logic
+            let container = document.getElementById('factoryReturnList');
+            let badge = document.getElementById('pendingReturnBadge');
+            if(!container || !badge) return;
+
+            let pendingReturns = shipments.filter(s => s.status === 'DELIVERED' && s.damagedBundles && s.damagedBundles.length > 0 && !s.returnVerified);
+
+            badge.innerText = `${pendingReturns.length} Pending Verification`;
+
+            if(pendingReturns.length === 0) {
+                container.innerHTML = `<div class="text-center text-orange-200 py-2">No damaged returns pending verification.</div>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            pendingReturns.forEach(s => {
+                container.innerHTML += `
+                    <div class="bg-orange-800 p-2 rounded flex justify-between items-center border border-orange-700">
+                        <div>
+                            <div class="font-bold text-white">${s.dealerName} (${s.product})</div>
+                            <div class="text-[10px] text-orange-200">Damaged Bundles (${s.damagedBundles.length}): ${s.damagedBundles.join(', ')}</div>
+                        </div>
+                        <button onclick="verifyFactoryReturn(${s.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-2 py-1 rounded text-[11px] shadow">
+                            ✅ Receive Damaged Bundles
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function verifyFactoryReturn(shipmentId) {
+            let shipment = shipments.find(s => s.id === shipmentId);
+            if(!shipment) return;
+
+            shipment.returnVerified = true;
+            syncToCloud("UPDATE", shipment);
+            alert(`✅ Damaged Bundles Verified & Logged in Factory Return System!`);
+        }
+
+        function openDeliveryModal(id) {
+            activeShipment = shipments.find(s => s.id === id);
+            if(!activeShipment) return;
+
+            document.getElementById('deliveryModalInfo').innerHTML = `
+                <div><b>Dealer:</b> ${activeShipment.dealerName} (${activeShipment.dealerPhone})</div>
+                <div><b>Product:</b> ${activeShipment.product} | <b>Vehicle:</b> ${activeShipment.vehicleNo}</div>
+            `;
+
+            document.getElementById('calcDispatched').innerText = `${activeShipment.dispatchedBundles.length} Pcs`;
+            
+            renderBundleChecklist();
+            updateModalCalculations();
+
+            document.getElementById('deliveryModal').classList.remove('hidden');
+        }
+
+        function closeDeliveryModal() {
+            if(isCameraActive) stopCameraScanner();
+            document.getElementById('deliveryModal').classList.add('hidden');
+            activeShipment = null;
+        }
+
+        function renderBundleChecklist() {
+            let container = document.getElementById('bundleChecklist');
+            container.innerHTML = "";
+
+            activeShipment.dispatchedBundles.forEach(bundleId => {
+                container.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-1.5 rounded border">
+                        <span class="font-mono font-bold text-gray-800">${bundleId}</span>
+                        <select id="status_${bundleId}" onchange="updateModalCalculations()" class="border rounded p-1 text-[11px] font-bold">
+                            <option value="OK">✅ OK Delivered</option>
+                            <option value="DAMAGED">💔 Damaged</option>
+                            <option value="MISSING">❌ Missing/Stolen</option>
+                        </select>
+                    </div>
+                `;
+            });
+        }
+
+        function updateModalCalculations() {
+            if(!activeShipment) return;
+
+            let okCount = 0;
+            let issueCount = 0;
+
+            activeShipment.dispatchedBundles.forEach(bundleId => {
+                let select = document.getElementById(`status_${bundleId}`);
+                let val = select ? select.value : 'OK';
+
+                if(val === 'OK') okCount++;
+                else issueCount++;
+            });
+
+            document.getElementById('calcIssues').innerText = `${issueCount} Pcs`;
+            document.getElementById('calcNetDelivered').innerText = `${okCount} Pcs`;
+        }
+
+        function confirmIndividualDelivery() {
+            if(!activeShipment) return;
+
+            let inputOtp = document.getElementById('deliveryOtpInput').value.trim();
+            if(inputOtp !== activeShipment.otp) {
+                alert("❌ अयोग्य OTP! कृपया Dealer कडून अचूक 4-Digit OTP घ्या.");
+                return;
+            }
+
+            let received = [];
+            let damaged = [];
+            let missing = [];
+
+            activeShipment.dispatchedBundles.forEach(bundleId => {
+                let val = document.getElementById(`status_${bundleId}`).value;
+                if(val === 'OK') received.push(bundleId);
+                else if(val === 'DAMAGED') damaged.push(bundleId);
+                else if(val === 'MISSING') missing.push(bundleId);
+            });
+
+            activeShipment.receivedBundles = received;
+            activeShipment.damagedBundles = damaged;
+            activeShipment.missingBundles = missing;
+            activeShipment.status = 'DELIVERED';
+            activeShipment.deliveredDateTime = getCurrentFormattedDateTime();
+
+            syncToCloud("UPDATE", activeShipment);
+
+            closeDeliveryModal();
+            alert("✅ Delivery Successfully Verified & Updated!");
+        }
+
+        function resendWhatsAppOtp() {
+            if(activeShipment) triggerWhatsAppMessage(activeShipment);
+        }
+
+        function toggleCameraScanner() {
+            if(isCameraActive) {
+                stopCameraScanner();
+            } else {
+                startCameraScanner();
+            }
+        }
+
+        function startCameraScanner() {
+            document.getElementById('cameraScannerBox').classList.remove('hidden');
+            document.getElementById('toggleCamBtn').innerText = "✕ Close Camera";
+
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText) => {
+                    let code = decodedText.trim().toUpperCase();
+                    let select = document.getElementById(`status_${code}`);
+                    if(select) {
+                        select.value = "DAMAGED";
+                        updateModalCalculations();
+                        try { beepAudio.play(); } catch(err){}
+                        alert(`💔 Bundle ${code} Marked as DAMAGED!`);
+                    } else {
+                        alert(`⚠️ Bundle ${code} या Shipment मध्ये उपलब्ध नाही!`);
+                    }
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                console.error("Camera Error:", err);
+                alert("📷 Camera Open करण्यात अडचण येत आहे. Device Permission तपासा.");
+            });
+
+            isCameraActive = true;
+        }
+
+        function stopCameraScanner() {
+            if(html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('cameraScannerBox').classList.add('hidden');
+                    document.getElementById('toggleCamBtn').innerText = "📷 Open Mobile Camera";
+                    isCameraActive = false;
+                }).catch(err => console.error("Camera Stop Error:", err));
+            }
+        }
+
+        function exportExcel() {
+            if(shipments.length === 0) {
+                alert("निर्यात करण्यासाठी कोणताच डेटा नाही!");
+                return;
+            }
+
+            let exportData = shipments.map(s => ({
+                "Dispatch Date": s.dispatchDateTime,
+                "Product": s.product,
+                "Dealer Name": s.dealerName,
+                "Dealer Phone": s.dealerPhone,
+                "Driver Name": s.driverName,
+                "Vehicle No": s.vehicleNo,
+                "Dispatched Qty": s.dispatchedBundles ? s.dispatchedBundles.length : 0,
+                "Net Delivered OK": s.receivedBundles ? s.receivedBundles.length : 0,
+                "Damaged Qty": s.damagedBundles ? s.damagedBundles.length : 0,
+                "Missing Qty": s.missingBundles ? s.missingBundles.length : 0,
+                "Status": s.status,
+                "Delivery Date": s.deliveredDateTime
+            }));
+
+            let ws = XLSX.utils.json_to_sheet(exportData);
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Dispatch Ledger");
+            XLSX.writeFile(wb, `Ekvira_ERP_Dispatch_Report_${Date.now()}.xlsx`);
         }
     </script>
 </body>
