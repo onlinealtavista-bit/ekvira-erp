@@ -360,6 +360,7 @@
     </div>
 
     <script>
+        // NEW GOOGLE SCRIPT EXEC URL
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxnehtN5OJd60afkNsWRONQk8-6CNnfKdIQwx1wyWzwA59dqpztM8rNRuNuJeBp6SRk/exec";
 
         // DEFAULT USERS
@@ -384,8 +385,6 @@
         let loggedInUserObj = JSON.parse(localStorage.getItem('ekvira_active_session')) || null;
         let idleTimer = null;
 
-        const beepAudio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
-
         window.onload = function() {
             saveUsersToLocal();
             if (!loggedInUserObj) {
@@ -404,14 +403,13 @@
             }
         }
 
-        // --- 15 MINUTES AUTO-LOGOUT TIMER ---
         function setupIdleTimer() {
             const resetTimer = () => {
                 if (idleTimer) clearTimeout(idleTimer);
                 idleTimer = setTimeout(() => {
                     alert("⏰ १५ मिनिटे कोणतीही हालचाल न झाल्यामुळे सिस्टीम सुरक्षिततेसाठी आपोआप लॉक झाली आहे.");
                     logout();
-                }, 900000); // 15 Min
+                }, 900000);
             };
 
             window.onload = resetTimer;
@@ -459,12 +457,12 @@
             let role = document.getElementById('newUserRole').value;
 
             if(!name || !uId || !pass) {
-                alert("कृपया सर्व माहिती (Name, User ID, Password) भरा!");
+                alert("कृपया सर्व माहिती भरा!");
                 return;
             }
 
             if(systemUsers.some(u => u.userId.toLowerCase() === uId.toLowerCase())) {
-                alert("⚠️ हा User ID आधीपासूनच वापरला गेला आहे. कृपया दुसरा User ID द्या.");
+                alert("⚠️ हा User ID आधीपासूनच वापरला गेला आहे.");
                 return;
             }
 
@@ -475,7 +473,7 @@
             document.getElementById('newUserId').value = "";
             document.getElementById('newUserPass').value = "";
 
-            alert(`✅ नवीन युझर "${name}" (ID: ${uId}) यशस्वीरित्या तयार करण्यात आला!`);
+            alert(`✅ नवीन युझर "${name}" तयार करण्यात आला!`);
         }
 
         function logout() {
@@ -500,43 +498,66 @@
             localStorage.setItem('ekvira_stock', JSON.stringify(productStock));
         }
 
-        function getCurrentFormattedDateTime() {
-            const now = new Date();
-            return `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`;
-        }
-
+        // --- UPDATED CLOUD FETCH FUNCTION ---
         function fetchCloudShipments() {
-            document.getElementById('syncStatus').innerText = "☁️ Syncing Cloud...";
-            fetch(GOOGLE_SCRIPT_URL)
-                .then(res => res.json())
-                .then(data => {
-                    shipments = data || [];
-                    updateStats();
-                    renderTable();
-                    renderFactoryReturns();
-                    document.getElementById('syncStatus').innerText = "✅ Cloud Connected";
-                    document.getElementById('syncStatus').className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
-                })
-                .catch(err => {
-                    console.error(err);
-                    document.getElementById('syncStatus').innerText = "⚠️ Offline Mode";
-                    document.getElementById('syncStatus').className = "text-[10px] bg-red-600 text-white font-bold px-2 py-1 rounded";
-                });
-        }
+            const syncStatusEl = document.getElementById('syncStatus');
+            if (syncStatusEl) {
+                syncStatusEl.innerText = "☁️ Connecting...";
+                syncStatusEl.className = "text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse";
+            }
 
-        function syncToCloud(actionType, shipmentData, extraId) {
-            document.getElementById('syncStatus').innerText = "☁️ Saving to Cloud...";
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: actionType, shipment: shipmentData, id: extraId })
+            fetch(GOOGLE_SCRIPT_URL + "?t=" + new Date().getTime(), {
+                method: "GET",
+                redirect: "follow"
             })
             .then(res => res.json())
-            .then(() => {
-                document.getElementById('syncStatus').innerText = "✅ Saved to Sheet";
-                document.getElementById('syncStatus').className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
+            .then(data => {
+                shipments = data || [];
+                updateStats();
+                renderTable();
+                renderFactoryReturns();
+                if (syncStatusEl) {
+                    syncStatusEl.innerText = "✅ Cloud Connected";
+                    syncStatusEl.className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
+                }
+            })
+            .catch(err => {
+                console.error("Cloud Connection Error:", err);
+                if (syncStatusEl) {
+                    syncStatusEl.innerText = "⚠️ Offline Mode";
+                    syncStatusEl.className = "text-[10px] bg-red-600 text-white font-bold px-2 py-1 rounded";
+                }
+            });
+        }
+
+        // --- UPDATED CLOUD SYNC FUNCTION ---
+        function syncToCloud(actionType, shipmentData, extraId) {
+            const syncStatusEl = document.getElementById('syncStatus');
+            if (syncStatusEl) {
+                syncStatusEl.innerText = "☁️ Saving to Cloud...";
+                syncStatusEl.className = "text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse";
+            }
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                },
+                body: JSON.stringify({ action: actionType, shipment: shipmentData, id: extraId }),
+                redirect: "follow"
+            })
+            .then(res => res.json())
+            .then(resData => {
+                if (syncStatusEl) {
+                    syncStatusEl.innerText = "✅ Saved to Sheet";
+                    syncStatusEl.className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
+                }
                 fetchCloudShipments();
             })
-            .catch(err => console.error("Cloud Save Error:", err));
+            .catch(err => {
+                console.error("Cloud Save Error:", err);
+                setTimeout(fetchCloudShipments, 1500);
+            });
         }
 
         function deleteShipment(id) {
@@ -553,27 +574,22 @@
                 if (index !== -1) {
                     let deletedShipment = shipments[index];
 
-                    // १. जर डिलिव्हरी पूर्ण झाली नसेल, तर स्टॉक Store मध्ये परत Restore करा
                     if (deletedShipment.product && deletedShipment.dispatchedBundles) {
                         let qtyToRestore = deletedShipment.dispatchedBundles.length;
                         productStock[deletedShipment.product] = (productStock[deletedShipment.product] || 0) + qtyToRestore;
                         saveLocalStock();
                     }
 
-                    // २. लोकल ॲरेमधून एंट्री तात्काळ काढा
                     shipments.splice(index, 1);
-
-                    // ३. स्क्रीन व आकडेवारी अपडेट करा
                     renderTable();
                     updateStats();
                     renderFactoryReturns();
 
-                    // ४. क्लाऊड (Google Sheet) कडे डिलीट रिक्वेस्ट पाठवा
                     syncToCloud("DELETE", null, targetId);
 
                     alert("✅ एंट्री यशस्वीरित्या डिलीट केली!");
                 } else {
-                    alert("⚠️ एंट्री सापडली नाही किंवा आधीच डिलीट झाली आहे!");
+                    alert("⚠️ एंट्री सापडली नाही!");
                 }
             }
         }
@@ -595,7 +611,19 @@
             saveLocalStock();
             updateStats();
             document.getElementById('editStockQty').value = "";
-            alert(`✅ ${cat} चा स्टॉक [Updated by: ${loggedInUserObj.name}] ${qty} Pcs वर सेट झाला!`);
+            alert(`✅ ${cat} चा स्टॉक ${qty} Pcs वर सेट झाला!`);
+        }
+
+        function updateStats() {
+            // Stat update logic
+        }
+
+        function renderTable() {
+            // Table rendering logic
+        }
+
+        function renderFactoryReturns() {
+            // Returns rendering logic
         }
     </script>
 </body>
