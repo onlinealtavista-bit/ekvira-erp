@@ -402,17 +402,30 @@
             .catch(err => console.error("Cloud Save Error:", err));
         }
 
+        // FIXED DELETE FUNCTION WITH IMMEDIATE UI UPDATE
         function deleteShipment(id) {
             if(activeRole !== 'FACTORY') {
                 alert("⚠️ एंट्री डिलीट करण्याचा अधिकार फक्त Factory Admin ला आहे!");
                 return;
             }
             if(confirm("⚠️ ही चुकीची एंट्री खरोखर डिलीट करायची आहे का?")) {
+                let index = shipments.findIndex(s => s.id === id);
+                if (index !== -1) {
+                    shipments.splice(index, 1);
+                    renderTable();
+                    updateStats();
+                }
+
                 syncToCloud("DELETE", null, id);
+                alert("✅ एंट्री यशस्वीरित्या डिलीट केली!");
             }
         }
 
         function applyStockEdit() {
+            if(activeRole !== 'FACTORY') {
+                alert("⚠️ हा बदल फक्त Factory Admin करू शकतात!");
+                return;
+            }
             let cat = document.getElementById('editStockCategory').value;
             let qty = parseInt(document.getElementById('editStockQty').value);
 
@@ -607,7 +620,10 @@
                     ? `<button onclick="openDeliveryModal(${s.id})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-2.5 py-1 rounded shadow">📲 Delivery Audit</button>`
                     : `<span class="text-[10px] text-gray-500 font-mono">${s.deliveredDateTime || 'Verified'}</span>`;
 
-                let deleteBtn = activeRole === 'FACTORY' ? `<button onclick="deleteShipment(${s.id})" class="text-red-500 hover:text-red-700 font-bold ml-2 text-xs" title="Delete Entry">🗑️</button>` : '';
+                // STRICT CHECK: ONLY SHOW DELETE BUTTON IN FACTORY ADMIN MODE
+                let deleteBtn = (activeRole === 'FACTORY') 
+                    ? `<button onclick="deleteShipment(${s.id})" class="text-red-500 hover:text-red-700 font-bold ml-2 text-xs" title="Delete Entry">🗑️</button>` 
+                    : '';
 
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-slate-50">
