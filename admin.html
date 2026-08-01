@@ -360,10 +360,9 @@
     </div>
 
     <script>
-        // NEW GOOGLE SCRIPT EXEC URL
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3xDUOqOuHKkQdRmXevFILxgwVUoyquG65wSE36kHxVLylHs28KLaQRXBtSQpHKPSB/exec";
 
-        // DEFAULT USERS
+        //  DEFAULT USERS (जर सिस्टीम नवीन असेल तर १ फॅक्टरी ॲडमिन आणि १ स्टोअर युझर)
         let systemUsers = JSON.parse(localStorage.getItem('ekvira_users')) || [
             { name: "Factory Owner", userId: "admin", pass: "admin123", role: "FACTORY" },
             { name: "Store Manager", userId: "store", pass: "store123", role: "STORE" }
@@ -385,6 +384,8 @@
         let loggedInUserObj = JSON.parse(localStorage.getItem('ekvira_active_session')) || null;
         let idleTimer = null;
 
+        const beepAudio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
+
         window.onload = function() {
             saveUsersToLocal();
             if (!loggedInUserObj) {
@@ -403,13 +404,14 @@
             }
         }
 
+        // --- 15 MINUTES AUTO-LOGOUT TIMER ---
         function setupIdleTimer() {
             const resetTimer = () => {
                 if (idleTimer) clearTimeout(idleTimer);
                 idleTimer = setTimeout(() => {
                     alert("⏰ १५ मिनिटे कोणतीही हालचाल न झाल्यामुळे सिस्टीम सुरक्षिततेसाठी आपोआप लॉक झाली आहे.");
                     logout();
-                }, 900000);
+                }, 900000); // 15 Min
             };
 
             window.onload = resetTimer;
@@ -457,12 +459,13 @@
             let role = document.getElementById('newUserRole').value;
 
             if(!name || !uId || !pass) {
-                alert("कृपया सर्व माहिती भरा!");
+                alert("कृपया सर्व माहिती (Name, User ID, Password) भरा!");
                 return;
             }
 
+            // Check duplicate
             if(systemUsers.some(u => u.userId.toLowerCase() === uId.toLowerCase())) {
-                alert("⚠️ हा User ID आधीपासूनच वापरला गेला आहे.");
+                alert("⚠️ हा User ID आधीपासूनच वापरला गेला आहे. कृपया दुसरा User ID द्या.");
                 return;
             }
 
@@ -473,7 +476,7 @@
             document.getElementById('newUserId').value = "";
             document.getElementById('newUserPass').value = "";
 
-            alert(`✅ नवीन युझर "${name}" तयार करण्यात आला!`);
+            alert(`✅ नवीन युझर "${name}" (ID: ${uId}) यशस्वीरित्या तयार करण्यात आला!`);
         }
 
         function logout() {
@@ -498,99 +501,60 @@
             localStorage.setItem('ekvira_stock', JSON.stringify(productStock));
         }
 
-        // --- UPDATED CLOUD FETCH FUNCTION ---
-        function fetchCloudShipments() {
-            const syncStatusEl = document.getElementById('syncStatus');
-            if (syncStatusEl) {
-                syncStatusEl.innerText = "☁️ Connecting...";
-                syncStatusEl.className = "text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse";
-            }
-
-            fetch(GOOGLE_SCRIPT_URL + "?t=" + new Date().getTime(), {
-                method: "GET",
-                redirect: "follow"
-            })
-            .then(res => res.json())
-            .then(data => {
-                shipments = data || [];
-                updateStats();
-                renderTable();
-                renderFactoryReturns();
-                if (syncStatusEl) {
-                    syncStatusEl.innerText = "✅ Cloud Connected";
-                    syncStatusEl.className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
-                }
-            })
-            .catch(err => {
-                console.error("Cloud Connection Error:", err);
-                if (syncStatusEl) {
-                    syncStatusEl.innerText = "⚠️ Offline Mode";
-                    syncStatusEl.className = "text-[10px] bg-red-600 text-white font-bold px-2 py-1 rounded";
-                }
-            });
+        function getCurrentFormattedDateTime() {
+            const now = new Date();
+            return `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`;
         }
 
-        // --- UPDATED CLOUD SYNC FUNCTION ---
-        function syncToCloud(actionType, shipmentData, extraId) {
-            const syncStatusEl = document.getElementById('syncStatus');
-            if (syncStatusEl) {
-                syncStatusEl.innerText = "☁️ Saving to Cloud...";
-                syncStatusEl.className = "text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse";
-            }
+        function fetchCloudShipments() {
+            document.getElementById('syncStatus').innerText = "☁️ Syncing Cloud...";
+            fetch(GOOGLE_SCRIPT_URL)
+                .then(res => res.json())
+                .then(data => {
+                    shipments = data || [];
+                    updateStats();
+                    renderTable();
+                    renderFactoryReturns();
+                    document.getElementById('syncStatus').innerText = "✅ Cloud Connected";
+                    document.getElementById('syncStatus').className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('syncStatus').innerText = "⚠️ Offline Mode";
+                    document.getElementById('syncStatus').className = "text-[10px] bg-red-600 text-white font-bold px-2 py-1 rounded";
+                });
+        }
 
+        function syncToCloud(actionType, shipmentData, extraId) {
+            document.getElementById('syncStatus').innerText = "☁️ Saving to Cloud...";
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8"
-                },
-                body: JSON.stringify({ action: actionType, shipment: shipmentData, id: extraId }),
-                redirect: "follow"
+                body: JSON.stringify({ action: actionType, shipment: shipmentData, id: extraId })
             })
             .then(res => res.json())
-            .then(resData => {
-                if (syncStatusEl) {
-                    syncStatusEl.innerText = "✅ Saved to Sheet";
-                    syncStatusEl.className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
-                }
+            .then(() => {
+                document.getElementById('syncStatus').innerText = "✅ Saved to Sheet";
+                document.getElementById('syncStatus').className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
                 fetchCloudShipments();
             })
-            .catch(err => {
-                console.error("Cloud Save Error:", err);
-                setTimeout(fetchCloudShipments, 1500);
-            });
+            .catch(err => console.error("Cloud Save Error:", err));
         }
 
         function deleteShipment(id) {
-            if (!loggedInUserObj || loggedInUserObj.role !== 'FACTORY') {
+            if(loggedInUserObj.role !== 'FACTORY') {
                 alert("⚠️ ही एंट्री डिलीट करण्याचा अधिकार फक्त Factory Admin ला आहे!");
                 return;
             }
-
-            const targetId = Number(id);
-
-            if (confirm(`⚠️ [User: ${loggedInUserObj.name}] ही एंट्री डिलीट करायची आहे का?`)) {
-                let index = shipments.findIndex(s => Number(s.id) === targetId);
-                
+            if(confirm(`⚠️ [User: ${loggedInUserObj.name}] ही एंट्री डिलीट करायची आहे का?`)) {
+                let index = shipments.findIndex(s => s.id === id);
                 if (index !== -1) {
-                    let deletedShipment = shipments[index];
-
-                    if (deletedShipment.product && deletedShipment.dispatchedBundles) {
-                        let qtyToRestore = deletedShipment.dispatchedBundles.length;
-                        productStock[deletedShipment.product] = (productStock[deletedShipment.product] || 0) + qtyToRestore;
-                        saveLocalStock();
-                    }
-
                     shipments.splice(index, 1);
                     renderTable();
                     updateStats();
-                    renderFactoryReturns();
-
-                    syncToCloud("DELETE", null, targetId);
-
-                    alert("✅ एंट्री यशस्वीरित्या डिलीट केली!");
-                } else {
-                    alert("⚠️ एंट्री सापडली नाही!");
                 }
+
+                syncToCloud("DELETE", null, id);
+                alert("✅ एंट्री यशस्वीरित्या डिलीट केली!");
             }
         }
 
@@ -611,19 +575,426 @@
             saveLocalStock();
             updateStats();
             document.getElementById('editStockQty').value = "";
-            alert(`✅ ${cat} चा स्टॉक ${qty} Pcs वर सेट झाला!`);
+            alert(`✅ ${cat} चा स्टॉक [Updated by: ${loggedInUserObj.name}] ${qty} Pcs वर सेट झाला!`);
         }
 
         function updateStats() {
-            // Stat update logic
+            let filter = document.getElementById('globalProductFilter') ? document.getElementById('globalProductFilter').value : 'ALL';
+            let totalStore = 0, totalDispatched = 0, totalTransit = 0, totalDelivered = 0, totalDamaged = 0, totalMissing = 0;
+
+            let summaryBody = document.getElementById('productSummaryBody');
+            if(summaryBody) summaryBody.innerHTML = "";
+
+            const allCategories = [
+                "Hydrogoal Inline Pipe",
+                "Rain Pipe",
+                "Flat Inline Pipe",
+                "Submain Pipe"
+            ];
+
+            allCategories.forEach(cat => {
+                let catStore = productStock[cat] || 0;
+                let catDisp = 0, catTransit = 0, catDeliv = 0, catDamaged = 0, catMissing = 0;
+
+                shipments.forEach(s => {
+                    if(s.product === cat) {
+                        let qty = s.dispatchedBundles ? s.dispatchedBundles.length : 0;
+                        catDisp += qty;
+                        if(s.status === 'IN_TRANSIT') {
+                            catTransit += qty;
+                        } else {
+                            catDeliv += s.receivedBundles ? s.receivedBundles.length : 0;
+                            catDamaged += s.damagedBundles ? s.damagedBundles.length : 0;
+                            catMissing += s.missingBundles ? s.missingBundles.length : 0;
+                        }
+                    }
+                });
+
+                if(summaryBody) {
+                    summaryBody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-2 border font-semibold text-gray-800">${cat}</td>
+                            <td class="p-2 border text-center font-bold text-indigo-700">${catStore} Pcs</td>
+                            <td class="p-2 border text-center font-semibold text-gray-700">${catDisp} Pcs</td>
+                            <td class="p-2 border text-center font-semibold text-amber-600">${catTransit} Pcs</td>
+                            <td class="p-2 border text-center font-bold text-emerald-600">${catDeliv} Pcs</td>
+                            <td class="p-2 border text-center font-semibold text-orange-600">${catDamaged} Pcs</td>
+                            <td class="p-2 border text-center font-semibold text-red-600">${catMissing} Pcs</td>
+                        </tr>
+                    `;
+                }
+
+                if(filter === 'ALL' || filter === cat) {
+                    totalStore += catStore;
+                    totalDispatched += catDisp;
+                    totalTransit += catTransit;
+                    totalDelivered += catDeliv;
+                    totalDamaged += catDamaged;
+                    totalMissing += catMissing;
+                }
+            });
+
+            if(document.getElementById('statStoreStock')) document.getElementById('statStoreStock').innerText = totalStore + " Pcs";
+            if(document.getElementById('statDispatched')) document.getElementById('statDispatched').innerText = totalDispatched + " Pcs";
+            if(document.getElementById('statTransit')) document.getElementById('statTransit').innerText = totalTransit + " Pcs";
+            if(document.getElementById('statDelivered')) document.getElementById('statDelivered').innerText = totalDelivered + " Pcs";
+            if(document.getElementById('statDamaged')) document.getElementById('statDamaged').innerText = totalDamaged + " Pcs";
+            if(document.getElementById('statMissing')) document.getElementById('statMissing').innerText = totalMissing + " Pcs";
+        }
+
+        document.getElementById('mfgInwardForm').addEventListener('submit', function(e){
+            e.preventDefault();
+            let cat = document.getElementById('mfgCategory').value;
+            let qty = parseInt(document.getElementById('mfgQty').value) || 0;
+            if(qty <= 0) return;
+
+            productStock[cat] = (productStock[cat] || 0) + qty;
+            saveLocalStock();
+            updateStats();
+            alert(`✅ Stock Added!\nProduct: ${cat}\nQty: ${qty} Bundles\nBy User: ${loggedInUserObj.name}`);
+            document.getElementById('mfgInwardForm').reset();
+        });
+
+        const gunInput = document.getElementById('gunBarcodeInput');
+        if(gunInput) {
+            gunInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    let val = this.value.trim().toUpperCase();
+                    if (val !== "") {
+                        if (!currentScannedBundles.includes(val)) {
+                            currentScannedBundles.push(val);
+                            renderScannedTags();
+                            try { beepAudio.play(); } catch(err){}
+                        }
+                    }
+                    this.value = ""; 
+                }
+            });
+        }
+
+        function renderScannedTags() {
+            let container = document.getElementById('scannedBundleTags');
+            if(!container) return;
+            container.innerHTML = "";
+            currentScannedBundles.forEach((b, index) => {
+                container.innerHTML += `
+                    <span class="bg-blue-100 text-blue-900 text-[10px] font-mono font-bold px-2 py-1 rounded flex items-center gap-1">
+                        ${b} <button onclick="removeBundle(${index})" class="text-red-500 font-bold hover:text-red-700">✕</button>
+                    </span>`;
+            });
+            document.getElementById('scanCount').innerText = `${currentScannedBundles.length} Bundles`;
+        }
+
+        function removeBundle(index) {
+            currentScannedBundles.splice(index, 1);
+            renderScannedTags();
+        }
+
+        function dispatchShipment() {
+            let category = document.getElementById('prodCategory').value;
+            let dealer = document.getElementById('dealerName').value.trim();
+            let phone = document.getElementById('dealerPhone').value.trim();
+            let driver = document.getElementById('driverName').value.trim();
+            let vehicle = document.getElementById('vehicleNo').value.trim().toUpperCase();
+
+            if(!dealer || !phone || currentScannedBundles.length === 0) {
+                alert("कृपया Dealer Details भरा आणि किमान १ Unique Bundle Scan करा!");
+                return;
+            }
+
+            const shipment = {
+                id: Date.now(),
+                dispatchDateTime: getCurrentFormattedDateTime(),
+                dispatchedBy: loggedInUserObj.name,
+                product: category,
+                dealerName: dealer,
+                dealerPhone: phone,
+                driverName: driver,
+                vehicleNo: vehicle,
+                dispatchedBundles: [...currentScannedBundles],
+                receivedBundles: [],
+                damagedBundles: [],
+                missingBundles: [],
+                status: 'IN_TRANSIT',
+                deliveredDateTime: '',
+                deliveredBy: '',
+                otp: Math.floor(1000 + Math.random() * 9000).toString(),
+                returnVerified: false
+            };
+
+            productStock[category] = Math.max(0, (productStock[category] || 0) - shipment.dispatchedBundles.length);
+            saveLocalStock();
+
+            syncToCloud("ADD", shipment);
+
+            currentScannedBundles = [];
+            renderScannedTags();
+
+            triggerWhatsAppMessage(shipment);
+        }
+
+        function triggerWhatsAppMessage(shipment) {
+            let msg = `🚚 *SHRI EKVIRA MFG COATS PVT LTD*\n*DISPATCH NOTICE*\n\nDear Dealer: ${shipment.dealerName}\nProduct: ${shipment.product}\nDispatched Qty: ${shipment.dispatchedBundles.length} Bundles\nVehicle No: ${shipment.vehicleNo}\nDriver: ${shipment.driverName}\n\n🔑 *Delivery OTP: ${shipment.otp}*\n\nPlease share this OTP with driver upon verifying physical delivery.`;
+            let url = `https://api.whatsapp.com/send?phone=91${shipment.dealerPhone}&text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
         }
 
         function renderTable() {
-            // Table rendering logic
+            let tbody = document.getElementById('dispatchTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = "";
+
+            if(shipments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">कोणतीही Dispatch Entry उपलब्ध नाही.</td></tr>`;
+                return;
+            }
+
+            shipments.forEach(s => {
+                let statusBadge = s.status === 'DELIVERED' 
+                    ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">✅ Delivered</span>`
+                    : `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">🚚 In-Transit</span>`;
+
+                let actionBtn = s.status === 'IN_TRANSIT'
+                    ? `<button onclick="openDeliveryModal(${s.id})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-2.5 py-1 rounded shadow">📲 Delivery Audit</button>`
+                    : `<span class="text-[10px] text-gray-500 font-mono">${s.deliveredDateTime || 'Verified'}</span>`;
+
+                let deleteBtn = (loggedInUserObj && loggedInUserObj.role === 'FACTORY') 
+                    ? `<button onclick="deleteShipment(${s.id})" class="text-red-500 hover:text-red-700 font-bold ml-2 text-xs" title="Delete Entry">🗑️</button>` 
+                    : '';
+
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-2 border">
+                            <div class="font-bold text-blue-900">${s.dealerName}</div>
+                            <div class="text-[10px] text-gray-500">${s.product} | ${s.dispatchDateTime}</div>
+                            <div class="text-[10px] font-mono text-gray-600">Driver: ${s.driverName} (${s.vehicleNo})</div>
+                            <div class="text-[10px] text-indigo-700 font-semibold mt-0.5">👤 Entry By: <b>${s.dispatchedBy || 'SYSTEM'}</b></div>
+                        </td>
+                        <td class="p-2 border text-center font-bold text-gray-800">${s.dispatchedBundles ? s.dispatchedBundles.length : 0} Pcs</td>
+                        <td class="p-2 border text-center font-bold text-emerald-600">${s.receivedBundles ? s.receivedBundles.length : 0} Pcs</td>
+                        <td class="p-2 border text-center font-semibold text-orange-600">
+                            ${s.damagedBundles ? s.damagedBundles.length : 0} Dmg / ${s.missingBundles ? s.missingBundles.length : 0} Miss
+                        </td>
+                        <td class="p-2 border text-center space-y-1">
+                            <div>${statusBadge}</div>
+                            <div class="flex justify-center items-center">${actionBtn} ${deleteBtn}</div>
+                            ${s.deliveredBy ? `<div class="text-[9px] text-emerald-700">Audit By: ${s.deliveredBy}</div>` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
         }
 
         function renderFactoryReturns() {
-            // Returns rendering logic
+            let container = document.getElementById('factoryReturnList');
+            let badge = document.getElementById('pendingReturnBadge');
+            if(!container || !badge) return;
+
+            let pendingReturns = shipments.filter(s => s.status === 'DELIVERED' && s.damagedBundles && s.damagedBundles.length > 0 && !s.returnVerified);
+
+            badge.innerText = `${pendingReturns.length} Pending Verification`;
+
+            if(pendingReturns.length === 0) {
+                container.innerHTML = `<div class="text-center text-orange-200 py-2">No damaged returns pending verification.</div>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            pendingReturns.forEach(s => {
+                container.innerHTML += `
+                    <div class="bg-orange-800 p-2 rounded flex justify-between items-center border border-orange-700">
+                        <div>
+                            <div class="font-bold text-white">${s.dealerName} (${s.product})</div>
+                            <div class="text-[10px] text-orange-200">Damaged Bundles (${s.damagedBundles.length}): ${s.damagedBundles.join(', ')}</div>
+                        </div>
+                        <button onclick="verifyFactoryReturn(${s.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-2 py-1 rounded text-[11px] shadow">
+                            ✅ Receive Damaged Bundles
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function verifyFactoryReturn(shipmentId) {
+            let shipment = shipments.find(s => s.id === shipmentId);
+            if(!shipment) return;
+
+            shipment.returnVerified = true;
+            syncToCloud("UPDATE", shipment);
+            alert(`✅ Damaged Bundles Verified by User: ${loggedInUserObj.name}!`);
+        }
+
+        function openDeliveryModal(id) {
+            activeShipment = shipments.find(s => s.id === id);
+            if(!activeShipment) return;
+
+            document.getElementById('deliveryModalInfo').innerHTML = `
+                <div><b>Dealer:</b> ${activeShipment.dealerName} (${activeShipment.dealerPhone})</div>
+                <div><b>Product:</b> ${activeShipment.product} | <b>Vehicle:</b> ${activeShipment.vehicleNo}</div>
+            `;
+
+            document.getElementById('calcDispatched').innerText = `${activeShipment.dispatchedBundles.length} Pcs`;
+            
+            renderBundleChecklist();
+            updateModalCalculations();
+
+            document.getElementById('deliveryModal').classList.remove('hidden');
+        }
+
+        function closeDeliveryModal() {
+            if(isCameraActive) stopCameraScanner();
+            document.getElementById('deliveryModal').classList.add('hidden');
+            activeShipment = null;
+        }
+
+        function renderBundleChecklist() {
+            let container = document.getElementById('bundleChecklist');
+            container.innerHTML = "";
+
+            activeShipment.dispatchedBundles.forEach(bundleId => {
+                container.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-1.5 rounded border">
+                        <span class="font-mono font-bold text-gray-800">${bundleId}</span>
+                        <select id="status_${bundleId}" onchange="updateModalCalculations()" class="border rounded p-1 text-[11px] font-bold">
+                            <option value="OK">✅ OK Delivered</option>
+                            <option value="DAMAGED">💔 Damaged</option>
+                            <option value="MISSING">❌ Missing/Stolen</option>
+                        </select>
+                    </div>
+                `;
+            });
+        }
+
+        function updateModalCalculations() {
+            if(!activeShipment) return;
+
+            let okCount = 0;
+            let issueCount = 0;
+
+            activeShipment.dispatchedBundles.forEach(bundleId => {
+                let select = document.getElementById(`status_${bundleId}`);
+                let val = select ? select.value : 'OK';
+
+                if(val === 'OK') okCount++;
+                else issueCount++;
+            });
+
+            document.getElementById('calcIssues').innerText = `${issueCount} Pcs`;
+            document.getElementById('calcNetDelivered').innerText = `${okCount} Pcs`;
+        }
+
+        function confirmIndividualDelivery() {
+            if(!activeShipment) return;
+
+            let inputOtp = document.getElementById('deliveryOtpInput').value.trim();
+            if(inputOtp !== activeShipment.otp) {
+                alert("❌ अयोग्य OTP! कृपया Dealer कडून अचूक 4-Digit OTP घ्या.");
+                return;
+            }
+
+            let received = [];
+            let damaged = [];
+            let missing = [];
+
+            activeShipment.dispatchedBundles.forEach(bundleId => {
+                let val = document.getElementById(`status_${bundleId}`).value;
+                if(val === 'OK') received.push(bundleId);
+                else if(val === 'DAMAGED') damaged.push(bundleId);
+                else if(val === 'MISSING') missing.push(bundleId);
+            });
+
+            activeShipment.receivedBundles = received;
+            activeShipment.damagedBundles = damaged;
+            activeShipment.missingBundles = missing;
+            activeShipment.status = 'DELIVERED';
+            activeShipment.deliveredDateTime = getCurrentFormattedDateTime();
+            activeShipment.deliveredBy = loggedInUserObj.name;
+
+            syncToCloud("UPDATE", activeShipment);
+
+            closeDeliveryModal();
+            alert(`✅ Delivery Verified by User: ${loggedInUserObj.name}!`);
+        }
+
+        function resendWhatsAppOtp() {
+            if(activeShipment) triggerWhatsAppMessage(activeShipment);
+        }
+
+        function toggleCameraScanner() {
+            if(isCameraActive) {
+                stopCameraScanner();
+            } else {
+                startCameraScanner();
+            }
+        }
+
+        function startCameraScanner() {
+            document.getElementById('cameraScannerBox').classList.remove('hidden');
+            document.getElementById('toggleCamBtn').innerText = "✕ Close Camera";
+
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText) => {
+                    let code = decodedText.trim().toUpperCase();
+                    let select = document.getElementById(`status_${code}`);
+                    if(select) {
+                        select.value = "DAMAGED";
+                        updateModalCalculations();
+                        try { beepAudio.play(); } catch(err){}
+                        alert(`💔 Bundle ${code} Marked as DAMAGED!`);
+                    } else {
+                        alert(`⚠️ Bundle ${code} या Shipment मध्ये उपलब्ध नाही!`);
+                    }
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                console.error("Camera Error:", err);
+                alert("📷 Camera Open करण्यात अडचण येत आहे. Device Permission तपासा.");
+            });
+
+            isCameraActive = true;
+        }
+
+        function stopCameraScanner() {
+            if(html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('cameraScannerBox').classList.add('hidden');
+                    document.getElementById('toggleCamBtn').innerText = "📷 Open Mobile Camera";
+                    isCameraActive = false;
+                }).catch(err => console.error("Camera Stop Error:", err));
+            }
+        }
+
+        function exportExcel() {
+            if(shipments.length === 0) {
+                alert("निर्यात करण्यासाठी कोणताच डेटा नाही!");
+                return;
+            }
+
+            let exportData = shipments.map(s => ({
+                "Dispatch Date": s.dispatchDateTime,
+                "Dispatched By (User)": s.dispatchedBy || "N/A",
+                "Product": s.product,
+                "Dealer Name": s.dealerName,
+                "Dealer Phone": s.dealerPhone,
+                "Driver Name": s.driverName,
+                "Vehicle No": s.vehicleNo,
+                "Dispatched Qty": s.dispatchedBundles ? s.dispatchedBundles.length : 0,
+                "Net Delivered OK": s.receivedBundles ? s.receivedBundles.length : 0,
+                "Damaged Qty": s.damagedBundles ? s.damagedBundles.length : 0,
+                "Missing Qty": s.missingBundles ? s.missingBundles.length : 0,
+                "Status": s.status,
+                "Delivery Date": s.deliveredDateTime,
+                "Audited By (User)": s.deliveredBy || "N/A"
+            }));
+
+            let ws = XLSX.utils.json_to_sheet(exportData);
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Dispatch Ledger");
+            XLSX.writeFile(wb, `Ekvira_ERP_Dispatch_Report_${Date.now()}.xlsx`);
         }
     </script>
 </body>
