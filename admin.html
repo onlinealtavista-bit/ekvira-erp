@@ -30,7 +30,7 @@
             </div>
         </div>
 
-        <!-- FACTORY ADMIN & STORE: STATS DASHBOARD -->
+        <!-- STATS DASHBOARD -->
         <div id="factoryStats" class="admin-only store-visible space-y-3">
             <div class="bg-white p-3 rounded-xl shadow flex justify-between items-center flex-wrap gap-3 border">
                 <div class="flex items-center gap-2">
@@ -74,70 +74,88 @@
             </div>
         </div>
 
-        <!-- FACTORY ADMIN & STORE: PRODUCT WISE SUMMARY -->
-        <div id="productSummaryCard" class="admin-only store-visible bg-white rounded-xl shadow p-4 border space-y-2">
-            <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider bg-blue-100 text-blue-900 inline-block px-2 py-1 rounded">📊 PRODUCT-WISE STOCK & TRANSIT SUMMARY</h3>
-            <div class="overflow-x-auto mt-2">
-                <table class="w-full text-xs text-left border">
-                    <thead class="bg-slate-100 text-gray-700 font-bold">
-                        <tr>
-                            <th class="p-2 border">Product Category</th>
-                            <th class="p-2 border text-center text-indigo-700">Store Stock</th>
-                            <th class="p-2 border text-center text-gray-700">Dispatched</th>
-                            <th class="p-2 border text-center text-amber-600">In-Transit</th>
-                            <th class="p-2 border text-center text-emerald-600">Net Delivered OK</th>
-                            <th class="p-2 border text-center text-orange-600">Damaged</th>
-                            <th class="p-2 border text-center text-red-600">Missing</th>
-                        </tr>
-                    </thead>
-                    <tbody id="productSummaryBody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- PRODUCTION INWARD & DIRECT STOCK EDIT -->
+        <!-- PRODUCTION INWARD -->
         <div id="storeInwardCard" class="admin-only store-visible grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-indigo-900 text-white rounded-xl shadow p-4 border border-indigo-800 md:col-span-2 space-y-3">
                 <div class="flex justify-between items-center border-b border-indigo-700 pb-2">
-                    <h3 class="text-md font-bold flex items-center gap-2">🏭 Production to Store Inward Entry</h3>
+                    <h3 class="text-md font-bold flex items-center gap-2">🏭 Production Stock Entry & Barcode Generator</h3>
                 </div>
-                <form id="mfgInwardForm" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-                    <div>
-                        <label class="block font-medium text-indigo-200">Product Category</label>
-                        <select id="mfgCategory" class="w-full border rounded p-2 mt-1 text-black font-semibold">
-                            <option value="Hydrogoal Inline Pipe">Hydrogoal Inline & Online Lateral</option>
-                            <option value="Rain Pipe">Rain Pipe</option>
-                            <option value="Flat Inline Pipe">Flat Inline Pipe</option>
-                            <option value="Submain Pipe">Submain Pipe (Patta Pipe)</option>
-                        </select>
+                
+                <!-- PRODUCTION FORM WITH PIPE SPECS -->
+                <form id="mfgInwardForm" class="space-y-3 text-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block font-medium text-indigo-200">Product Category</label>
+                            <select id="mfgCategory" class="w-full border rounded p-2 mt-1 text-black font-semibold">
+                                <option value="Hydrogoal Inline Pipe">Hydrogoal Inline Pipe</option>
+                                <option value="Rain Pipe">Rain Pipe</option>
+                                <option value="Flat Inline Pipe">Flat Inline Pipe</option>
+                                <option value="Submain Pipe">Submain Pipe (Patta Pipe)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-medium text-indigo-200">Pipe Size (MM / Inch)</label>
+                            <select id="mfgPipeSize" class="w-full border rounded p-2 mt-1 text-black font-semibold">
+                                <option value="12mm">12 MM</option>
+                                <option value="16mm" selected>16 MM</option>
+                                <option value="20mm">20 MM</option>
+                                <option value="25mm">25 MM (1 Inch)</option>
+                                <option value="32mm">32 MM (1.25 Inch)</option>
+                                <option value="40mm">40 MM (1.5 Inch)</option>
+                                <option value="50mm">50 MM (2 Inch)</option>
+                                <option value="63mm">63 MM (2.5 Inch)</option>
+                                <option value="75mm">75 MM (3 Inch)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-medium text-indigo-200">Bundle Length (Meters)</label>
+                            <select id="mfgBundleLength" class="w-full border rounded p-2 mt-1 text-black font-semibold">
+                                <option value="100 Mtr">100 Meters</option>
+                                <option value="200 Mtr">200 Meters</option>
+                                <option value="300 Mtr">300 Meters</option>
+                                <option value="400 Mtr" selected>400 Meters</option>
+                                <option value="500 Mtr">500 Meters</option>
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block font-medium text-indigo-200">Auto Batch No</label>
-                        <input type="text" id="mfgBatchNo" class="w-full border rounded p-2 mt-1 text-black font-mono font-bold bg-gray-200 cursor-not-allowed" readonly>
-                    </div>
-                    <div>
-                        <label class="block font-medium text-indigo-200">Quantity (Bundles)</label>
-                        <input type="number" id="mfgQty" min="1" class="w-full border rounded p-2 mt-1 text-black font-bold" placeholder="e.g. 50" required>
-                    </div>
-                    <div class="flex items-end gap-2">
-                        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded text-xs transition shadow">
-                            📥 Add Stock
-                        </button>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block font-medium text-indigo-200">Quality Grade</label>
+                            <select id="mfgPipeGrade" class="w-full border rounded p-2 mt-1 text-black font-semibold">
+                                <option value="STANDARD">STANDARD</option>
+                                <option value="ECO">ECO / Economy</option>
+                                <option value="HEAVY">HEAVY DUTY</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-medium text-indigo-200">Auto Batch No</label>
+                            <input type="text" id="mfgBatchNo" class="w-full border rounded p-2 mt-1 text-black font-mono font-bold bg-gray-200 cursor-not-allowed" readonly>
+                        </div>
+                        <div>
+                            <label class="block font-medium text-indigo-200">Quantity (Bundles)</label>
+                            <input type="number" id="mfgQty" min="1" class="w-full border rounded p-2 mt-1 text-black font-bold" placeholder="e.g. 50" required>
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded text-xs transition shadow">
+                                📥 Add Stock & Gen Barcodes
+                            </button>
+                        </div>
                     </div>
                 </form>
 
-                <!-- INWARD HISTORY WITH BATCH & MANUFACTURED AT DATA -->
+                <!-- RECENT BATCHES TABLE -->
                 <div class="mt-3 border-t border-indigo-800 pt-2">
-                    <h4 class="text-xs font-bold text-indigo-200 mb-2">📦 Recent Production Batches & Label Printing:</h4>
+                    <h4 class="text-xs font-bold text-indigo-200 mb-2">📦 Production Batches & Detailed Label Printing:</h4>
                     <div class="overflow-x-auto">
                         <table class="w-full text-[11px] text-left text-slate-200 border border-indigo-800">
                             <thead class="bg-indigo-950 text-indigo-200 font-bold">
                                 <tr>
                                     <th class="p-1.5 border border-indigo-800">Batch No</th>
-                                    <th class="p-1.5 border border-indigo-800">Manufactured At</th>
-                                    <th class="p-1.5 border border-indigo-800">Product</th>
+                                    <th class="p-1.5 border border-indigo-800">Product Specification</th>
+                                    <th class="p-1.5 border border-indigo-800 text-center">Grade</th>
                                     <th class="p-1.5 border border-indigo-800 text-center">Qty</th>
-                                    <th class="p-1.5 border border-indigo-800 text-center">TSC Action</th>
+                                    <th class="p-1.5 border border-indigo-800 text-center">Print Label</th>
                                 </tr>
                             </thead>
                             <tbody id="inwardHistoryBody">
@@ -148,9 +166,9 @@
                 </div>
             </div>
 
-            <!-- MANUAL STOCK EDIT / CORRECTION FEATURE (ADMIN ONLY) -->
+            <!-- DIRECT STOCK EDIT -->
             <div id="directStockEditBox" class="admin-only bg-slate-800 text-white rounded-xl shadow p-4 border border-slate-700 md:col-span-1 space-y-2">
-                <h3 class="text-sm font-bold text-amber-400 border-b border-slate-700 pb-1">✏️ Direct Stock Edit / Correction (Admin Only)</h3>
+                <h3 class="text-sm font-bold text-amber-400 border-b border-slate-700 pb-1">✏️ Direct Stock Edit / Correction</h3>
                 <div class="text-xs space-y-2">
                     <div>
                         <label class="block text-gray-300">Select Product:</label>
@@ -172,20 +190,8 @@
             </div>
         </div>
 
-        <!-- FACTORY RETURN VERIFICATION -->
-        <div id="factoryReturnCard" class="admin-only store-visible bg-orange-900 text-white rounded-xl shadow p-4 border border-orange-800 space-y-3">
-            <div class="flex justify-between items-center border-b border-orange-700 pb-2">
-                <h3 class="text-md font-bold flex items-center gap-2">📦 Factory Return Verification & Damaged Stock Re-Inward</h3>
-                <span class="text-xs bg-orange-700 text-orange-100 px-2 py-0.5 rounded font-mono" id="pendingReturnBadge">0 Pending Verification</span>
-            </div>
-            <div id="factoryReturnList" class="space-y-2 max-h-48 overflow-y-auto text-xs">
-                <div class="text-center text-orange-200 py-2">No damaged returns pending verification.</div>
-            </div>
-        </div>
-
-        <!-- WORKSPACE AREA -->
+        <!-- WORKSPACE AREA: DISPATCH & LEDGER -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
             <!-- DISPATCH FORM -->
             <div id="dispatchFormCard" class="admin-only store-visible bg-white rounded-xl shadow p-4 border lg:col-span-1 space-y-3">
                 <h3 class="text-md font-bold text-blue-900 border-b pb-2">🚚 Dispatch Entry & Scan</h3>
@@ -193,7 +199,7 @@
                 <div>
                     <label class="block text-xs font-semibold text-gray-700">Product Category</label>
                     <select id="prodCategory" class="w-full border rounded p-2 text-xs mt-1 font-semibold">
-                        <option value="Hydrogoal Inline Pipe">Hydrogoal Inline & Online Lateral</option>
+                        <option value="Hydrogoal Inline Pipe">Hydrogoal Inline Pipe</option>
                         <option value="Rain Pipe">Rain Pipe</option>
                         <option value="Flat Inline Pipe">Flat Inline Pipe</option>
                         <option value="Submain Pipe">Submain Pipe (Patta Pipe)</option>
@@ -221,7 +227,7 @@
                     </div>
                 </div>
 
-                <!-- BARCODE GUN SCANNER BOX -->
+                <!-- SCANNER BOX -->
                 <div class="bg-amber-50 p-3 rounded border border-amber-300 space-y-2">
                     <div class="flex justify-between items-center">
                         <label class="block text-xs font-bold text-amber-900">🔫 BARCODE SCANNER BOX:</label>
@@ -265,61 +271,6 @@
                     </table>
                 </div>
             </div>
-
-        </div>
-
-    </div>
-
-    <!-- DELIVERY AUDIT MODAL -->
-    <div id="deliveryModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs flex justify-center items-center p-3 z-50">
-        <div class="bg-white rounded-xl shadow-2xl max-w-xl w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b pb-2">
-                <h3 class="text-sm font-bold text-blue-900">🔍 Mobile Audit, Camera Scan & Delivery Confirmation</h3>
-                <button onclick="closeDeliveryModal()" class="text-gray-400 font-bold hover:text-black">✕</button>
-            </div>
-
-            <div id="deliveryModalInfo" class="text-xs bg-blue-50 p-2.5 rounded space-y-1 text-blue-900"></div>
-
-            <div class="bg-slate-100 p-3 rounded border space-y-2">
-                <div class="flex justify-between items-center">
-                    <span class="text-xs font-bold text-gray-800">📷 Scan Damaged Bundle:</span>
-                    <button id="toggleCamBtn" onclick="toggleCameraScanner()" class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] px-2.5 py-1 rounded font-bold">
-                        📷 Open Mobile Camera
-                    </button>
-                </div>
-                <div id="cameraScannerBox" class="hidden border-2 border-blue-500 rounded overflow-hidden bg-black max-w-sm mx-auto">
-                    <div id="reader" style="width: 100%;"></div>
-                </div>
-            </div>
-
-            <div class="bg-emerald-50 border border-emerald-200 p-3 rounded text-xs space-y-1">
-                <div class="font-bold text-emerald-900 flex justify-between">
-                    <span>🚚 Dispatched Total: <b id="calcDispatched">0 Pcs</b></span>
-                    <span>💔 Damaged/Missing: <b id="calcIssues" class="text-orange-600">0 Pcs</b></span>
-                </div>
-                <div class="border-t border-emerald-200 pt-1 flex justify-between items-center">
-                    <span class="text-sm font-bold text-emerald-800">✅ Net Delivered OK:</span>
-                    <span class="text-lg font-bold text-emerald-700" id="calcNetDelivered">0 Pcs</span>
-                </div>
-            </div>
-
-            <div class="space-y-2">
-                <span class="text-xs font-bold text-gray-700">Bundle Status Checklist:</span>
-                <div id="bundleChecklist" class="max-h-48 overflow-y-auto border p-2 rounded space-y-2 text-xs bg-slate-50"></div>
-            </div>
-
-            <div class="bg-amber-50 p-2.5 rounded border border-amber-200 space-y-2 text-xs">
-                <div class="flex justify-between items-center">
-                    <span class="font-bold text-amber-900">Dealer WhatsApp OTP:</span>
-                    <button onclick="resendWhatsAppOtp()" class="text-blue-700 bg-blue-100 px-2 py-0.5 rounded font-semibold text-[11px]">📲 Resend OTP</button>
-                </div>
-                <input type="text" id="deliveryOtpInput" maxlength="4" placeholder="Enter 4-Digit OTP" class="w-full border rounded p-2 text-center text-xl font-mono font-bold tracking-widest text-blue-900">
-            </div>
-
-            <div class="flex justify-end gap-2">
-                <button onclick="closeDeliveryModal()" class="px-3 py-1.5 text-xs border rounded">Cancel</button>
-                <button onclick="confirmIndividualDelivery()" class="px-4 py-1.5 text-xs bg-emerald-600 text-white font-bold rounded shadow">Verify OTP & Confirm Delivery ✅</button>
-            </div>
         </div>
     </div>
 
@@ -336,21 +287,9 @@
         let batchHistory = JSON.parse(localStorage.getItem('ekvira_batch_history')) || [];
         let shipments = [];
         let currentScannedBundles = [];
-        let activeShipment = null;
-        let html5QrCode = null;
-        let activeRole = 'FACTORY';
 
         window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const mode = urlParams.get('mode');
-            
-            if (mode === 'driver') {
-                document.getElementById('userRole').value = 'DRIVER';
-                document.getElementById('userRole').classList.add('hidden');
-            }
-            
             generateAutoBatchNo();
-            switchRole(document.getElementById('userRole').value);
             fetchCloudShipments();
             renderInwardHistory();
         };
@@ -361,41 +300,7 @@
                             String(now.getMonth() + 1).padStart(2, '0') +
                             String(now.getDate()).padStart(2, '0');
             const seq = String(batchHistory.length + 1).padStart(3, '0');
-            const autoBatch = `BATCH-${dateStr}-${seq}`;
-            document.getElementById('mfgBatchNo').value = autoBatch;
-        }
-
-        function switchRole(role) {
-            activeRole = role;
-            const adminElements = document.querySelectorAll('.admin-only');
-            const storeElements = document.querySelectorAll('.store-visible');
-            const directEdit = document.getElementById('directStockEditBox');
-            const shipmentsCard = document.getElementById('shipmentsCard');
-
-            if (role === 'DRIVER') {
-                adminElements.forEach(el => el.classList.add('hidden'));
-                shipmentsCard.classList.remove('lg:col-span-2');
-                shipmentsCard.classList.add('lg:col-span-3');
-            } else if (role === 'STORE') {
-                adminElements.forEach(el => el.classList.add('hidden'));
-                storeElements.forEach(el => el.classList.remove('hidden'));
-                if(directEdit) directEdit.classList.add('hidden');
-                shipmentsCard.classList.remove('lg:col-span-3');
-                shipmentsCard.classList.add('lg:col-span-2');
-            } else {
-                adminElements.forEach(el => el.classList.remove('hidden'));
-                shipmentsCard.classList.remove('lg:col-span-3');
-                shipmentsCard.classList.add('lg:col-span-2');
-            }
-            renderTable();
-        }
-
-        function saveLocalStock() {
-            localStorage.setItem('ekvira_stock', JSON.stringify(productStock));
-        }
-
-        function saveBatchHistory() {
-            localStorage.setItem('ekvira_batch_history', JSON.stringify(batchHistory));
+            document.getElementById('mfgBatchNo').value = `BATCH-${dateStr}-${seq}`;
         }
 
         function getCurrentFormattedDateTime() {
@@ -403,137 +308,21 @@
             return `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`;
         }
 
-        function fetchCloudShipments() {
-            document.getElementById('syncStatus').innerText = "☁️ Syncing Cloud...";
-            fetch(GOOGLE_SCRIPT_URL)
-                .then(res => res.json())
-                .then(data => {
-                    shipments = data.shipments || data || [];
-                    if(data.batchHistory) {
-                        batchHistory = data.batchHistory;
-                        saveBatchHistory();
-                        renderInwardHistory();
-                    }
-                    updateStats();
-                    renderTable();
-                    renderFactoryReturns();
-                    document.getElementById('syncStatus').innerText = "✅ Cloud Connected";
-                    document.getElementById('syncStatus').className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
-                })
-                .catch(err => {
-                    console.error(err);
-                    document.getElementById('syncStatus').innerText = "⚠️ Offline Mode";
-                    document.getElementById('syncStatus').className = "text-[10px] bg-red-600 text-white font-bold px-2 py-1 rounded";
-                });
-        }
-
-        function syncToCloud(actionType, shipmentData, extraId) {
-            document.getElementById('syncStatus').innerText = "☁️ Saving to Cloud...";
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: actionType, shipment: shipmentData, id: extraId, batchHistory: batchHistory })
-            })
-            .then(res => res.json())
-            .then(() => {
-                document.getElementById('syncStatus').innerText = "✅ Saved to Sheet";
-                document.getElementById('syncStatus').className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
-                fetchCloudShipments();
-            })
-            .catch(err => console.error("Cloud Save Error:", err));
-        }
-
-        function applyStockEdit() {
-            let cat = document.getElementById('editStockCategory').value;
-            let qty = parseInt(document.getElementById('editStockQty').value);
-
-            if (isNaN(qty) || qty < 0) {
-                alert("कृपया योग्य संख्या प्रविष्ट करा!");
-                return;
-            }
-
-            productStock[cat] = qty;
-            saveLocalStock();
-            updateStats();
-            document.getElementById('editStockQty').value = "";
-            alert(`✅ ${cat} चा स्टॉक आता ${qty} Pcs वर सेट झाला आहे!`);
-        }
-
-        function updateStats() {
-            let filter = document.getElementById('globalProductFilter') ? document.getElementById('globalProductFilter').value : 'ALL';
-            let totalStore = 0, totalDispatched = 0, totalTransit = 0, totalDelivered = 0, totalDamaged = 0, totalMissing = 0;
-
-            let summaryBody = document.getElementById('productSummaryBody');
-            if(summaryBody) summaryBody.innerHTML = "";
-
-            const allCategories = [
-                "Hydrogoal Inline Pipe",
-                "Rain Pipe",
-                "Flat Inline Pipe",
-                "Submain Pipe"
-            ];
-
-            allCategories.forEach(cat => {
-                let catStore = productStock[cat] || 0;
-                let catDisp = 0, catTransit = 0, catDeliv = 0, catDamaged = 0, catMissing = 0;
-
-                shipments.forEach(s => {
-                    if(s.product === cat) {
-                        let qty = s.dispatchedBundles ? s.dispatchedBundles.length : 0;
-                        catDisp += qty;
-                        if(s.status === 'IN_TRANSIT') {
-                            catTransit += qty;
-                        } else {
-                            catDeliv += s.receivedBundles ? s.receivedBundles.length : 0;
-                            catDamaged += s.damagedBundles ? s.damagedBundles.length : 0;
-                            catMissing += s.missingBundles ? s.missingBundles.length : 0;
-                        }
-                    }
-                });
-
-                if(summaryBody) {
-                    summaryBody.innerHTML += `
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="p-2 border font-semibold text-gray-800">${cat}</td>
-                            <td class="p-2 border text-center font-bold text-indigo-700">${catStore} Pcs</td>
-                            <td class="p-2 border text-center font-semibold text-gray-700">${catDisp} Pcs</td>
-                            <td class="p-2 border text-center font-semibold text-amber-600">${catTransit} Pcs</td>
-                            <td class="p-2 border text-center font-bold text-emerald-600">${catDeliv} Pcs</td>
-                            <td class="p-2 border text-center font-semibold text-orange-600">${catDamaged} Pcs</td>
-                            <td class="p-2 border text-center font-semibold text-red-600">${catMissing} Pcs</td>
-                        </tr>
-                    `;
-                }
-
-                if(filter === 'ALL' || filter === cat) {
-                    totalStore += catStore;
-                    totalDispatched += catDisp;
-                    totalTransit += catTransit;
-                    totalDelivered += catDeliv;
-                    totalDamaged += catDamaged;
-                    totalMissing += catMissing;
-                }
-            });
-
-            if(document.getElementById('statStoreStock')) document.getElementById('statStoreStock').innerText = totalStore + " Pcs";
-            if(document.getElementById('statDispatched')) document.getElementById('statDispatched').innerText = totalDispatched + " Pcs";
-            if(document.getElementById('statTransit')) document.getElementById('statTransit').innerText = totalTransit + " Pcs";
-            if(document.getElementById('statDelivered')) document.getElementById('statDelivered').innerText = totalDelivered + " Pcs";
-            if(document.getElementById('statDamaged')) document.getElementById('statDamaged').innerText = totalDamaged + " Pcs";
-            if(document.getElementById('statMissing')) document.getElementById('statMissing').innerText = totalMissing + " Pcs";
-        }
-
-        // AUTO-GENERATED BATCH & INDIVIDUAL BUNDLE BARCODES SUBMIT
+        // INWARD FORM SUBMIT HANDLER WITH NEW FIELDS
         document.getElementById('mfgInwardForm').addEventListener('submit', function(e){
             e.preventDefault();
             let cat = document.getElementById('mfgCategory').value;
+            let pipeSize = document.getElementById('mfgPipeSize').value;
+            let bundleLength = document.getElementById('mfgBundleLength').value;
+            let pipeGrade = document.getElementById('mfgPipeGrade').value;
             let batchHeader = document.getElementById('mfgBatchNo').value.trim();
             let qty = parseInt(document.getElementById('mfgQty').value) || 0;
+
             if(qty <= 0) return;
 
             let manufacturedAt = getCurrentFormattedDateTime();
-
-            // Generate Individual Bundle Barcodes
             let bundleBarcodes = [];
+
             for (let i = 1; i <= qty; i++) {
                 let bundleSeq = String(i).padStart(3, '0');
                 bundleBarcodes.push(`${batchHeader}-B${bundleSeq}`);
@@ -543,21 +332,23 @@
                 batchNo: batchHeader,
                 manufacturedAt: manufacturedAt,
                 product: cat,
+                pipeSize: pipeSize,
+                bundleLength: bundleLength,
+                grade: pipeGrade,
                 qty: qty,
                 bundles: bundleBarcodes
             };
 
             batchHistory.unshift(batchRecord);
-            saveBatchHistory();
+            localStorage.setItem('ekvira_batch_history', JSON.stringify(batchHistory));
 
             productStock[cat] = (productStock[cat] || 0) + qty;
-            saveLocalStock();
-            updateStats();
-            renderInwardHistory();
+            localStorage.setItem('ekvira_stock', JSON.stringify(productStock));
 
+            renderInwardHistory();
             syncToCloud('ADD_BATCH', null, null);
 
-            alert(`✅ Batch Created Successfully!\nBatch No: ${batchHeader}\nTotal Bundles: ${qty}\nIndividual Bundle Barcodes Generated!`);
+            alert(`✅ Batch Created Successfully!\nSpecs: ${cat} | ${pipeSize} | ${bundleLength} | Grade: ${pipeGrade}`);
             
             document.getElementById('mfgQty').value = "";
             generateAutoBatchNo();
@@ -573,12 +364,18 @@
 
             body.innerHTML = "";
             batchHistory.forEach(b => {
+                let sizeInfo = b.pipeSize ? `${b.pipeSize} | ${b.bundleLength}` : 'Standard Spec';
+                let gradeInfo = b.grade || 'STD';
+
                 body.innerHTML += `
                     <tr class="border-b border-indigo-800 hover:bg-indigo-900">
-                        <td class="p-1.5 font-mono font-bold text-amber-300">${b.batchNo}</td>
-                        <td class="p-1.5 text-gray-300">${b.manufacturedAt}</td>
-                        <td class="p-1.5 text-white">${b.product}</td>
-                        <td class="p-1.5 text-center font-bold text-emerald-400">${b.qty} Pcs</td>
+                        <td class="p-1.5 font-mono font-bold text-amber-300">${b.batchNo || 'N/A'}</td>
+                        <td class="p-1.5 text-white">
+                            <div class="font-bold">${b.product || 'N/A'}</div>
+                            <div class="text-[10px] text-indigo-200">${sizeInfo}</div>
+                        </td>
+                        <td class="p-1.5 text-center font-bold text-amber-400">${gradeInfo}</td>
+                        <td class="p-1.5 text-center font-bold text-emerald-400">${b.qty || 0} Pcs</td>
                         <td class="p-1.5 text-center">
                             <button onclick="printTSCPrintWindow('${b.batchNo}')" class="bg-amber-500 hover:bg-amber-600 text-black text-[10px] font-bold px-2 py-0.5 rounded shadow">
                                 🖨️ Print Labels
@@ -589,12 +386,16 @@
             });
         }
 
-        // PRINT TSC LABELS WINDOW FOR ALL BUNDLES IN BATCH
+        // PRINT TSC STICKER LABELS WITH ECO/STANDARD & SIZE DETAILS
         function printTSCPrintWindow(batchNo) {
             let batch = batchHistory.find(b => b.batchNo === batchNo);
             if(!batch) return;
 
             let printWin = window.open('', '_blank');
+            let pipeSize = batch.pipeSize || '16mm';
+            let bundleLength = batch.bundleLength || '400 Mtr';
+            let grade = batch.grade || 'STANDARD';
+
             let htmlContent = `
                 <!DOCTYPE html>
                 <html>
@@ -602,37 +403,52 @@
                     <title>Print Labels - ${batch.batchNo}</title>
                     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
                     <style>
-                        body { font-family: Arial, sans-serif; margin: 0; padding: 10px; }
-                        .label-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+                        @page { size: auto; margin: 0mm; }
+                        body { font-family: 'Arial', sans-serif; margin: 0; padding: 10px; background: #fff; }
+                        .label-grid { display: flex; flex-wrap: wrap; gap: 8px; }
                         .label-box { 
                             width: 50mm; 
                             height: 35mm; 
-                            border: 1px dashed #333; 
-                            padding: 4px; 
+                            border: 1px dashed #444; 
+                            padding: 3px 5px; 
                             box-sizing: border-box; 
                             text-align: center;
                             page-break-inside: avoid;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: space-between;
                         }
-                        .company { font-size: 8px; font-weight: bold; }
-                        .product { font-size: 9px; font-weight: bold; color: #111; margin: 2px 0; }
-                        .batch { font-size: 7px; color: #555; }
-                        svg { width: 90%; height: 18mm; }
+                        .company { font-size: 8px; font-weight: 900; color: #000; text-transform: uppercase; letter-spacing: -0.2px; }
+                        .product-head { font-size: 8.5px; font-weight: bold; color: #111; line-height: 1; margin-top: 1px; }
+                        .badge-row { display: flex; justify-content: space-between; font-size: 7.5px; font-weight: bold; background: #f0f0f0; padding: 1px 3px; border-radius: 2px; margin: 1px 0; }
+                        .grade-badge { color: #d97706; text-transform: uppercase; }
+                        .size-badge { color: #1e3a8a; }
+                        svg { width: 100%; height: 16mm; }
+                        .footer-date { font-size: 6.5px; font-weight: 600; color: #333; }
                     </style>
                 </head>
                 <body>
                     <div class="label-grid">
             `;
 
-            batch.bundles.forEach(bCode => {
-                htmlContent += `
-                    <div class="label-box">
-                        <div class="company">SHRI EKVIRA MFG COATS</div>
-                        <div class="product">${batch.product}</div>
-                        <svg class="barcode" data-value="${bCode}"></svg>
-                        <div class="batch">MFG: ${batch.manufacturedAt}</div>
-                    </div>
-                `;
-            });
+            if(batch.bundles && batch.bundles.length > 0) {
+                batch.bundles.forEach(bCode => {
+                    htmlContent += `
+                        <div class="label-box">
+                            <div>
+                                <div class="company">SHRI EKVIRA MFG COATS</div>
+                                <div class="product-head">${batch.product}</div>
+                                <div class="badge-row">
+                                    <span class="size-badge">SIZE: ${pipeSize} | ${bundleLength}</span>
+                                    <span class="grade-badge">[${grade}]</span>
+                                </div>
+                            </div>
+                            <svg class="barcode" data-value="${bCode}"></svg>
+                            <div class="footer-date">MFG: ${batch.manufacturedAt}</div>
+                        </div>
+                    `;
+                });
+            }
 
             htmlContent += `
                     </div>
@@ -640,10 +456,11 @@
                         document.querySelectorAll('.barcode').forEach(el => {
                             JsBarcode(el, el.getAttribute('data-value'), {
                                 format: "CODE128",
-                                width: 1.5,
-                                height: 40,
+                                width: 1.4,
+                                height: 35,
                                 displayValue: true,
-                                fontSize: 10
+                                fontSize: 9,
+                                margin: 0
                             });
                         });
                         setTimeout(() => { window.print(); }, 800);
@@ -656,335 +473,41 @@
             printWin.document.close();
         }
 
-        function handleGunScan(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                let code = e.target.value.trim().toUpperCase();
-                if(code && !currentScannedBundles.includes(code)) {
-                    currentScannedBundles.push(code);
-                    renderScannedTags();
-                }
-                e.target.value = "";
-            }
-        }
-
-        function renderScannedTags() {
-            let container = document.getElementById('scannedBundleTags');
-            let countSpan = document.getElementById('scanCount');
-            if(!container) return;
-
-            container.innerHTML = "";
-            currentScannedBundles.forEach((tag, idx) => {
-                container.innerHTML += `
-                    <span class="bg-blue-800 text-white text-[10px] px-2 py-0.5 rounded flex items-center gap-1 font-mono">
-                        ${tag}
-                        <button onclick="removeScannedBundle(${idx})" class="text-red-300 font-bold hover:text-white">✕</button>
-                    </span>
-                `;
-            });
-
-            if(countSpan) countSpan.innerText = `${currentScannedBundles.length} Bundles`;
-        }
-
-        function removeScannedBundle(index) {
-            currentScannedBundles.splice(index, 1);
-            renderScannedTags();
-        }
-
-        function dispatchShipment() {
-            let cat = document.getElementById('prodCategory').value;
-            let dealer = document.getElementById('dealerName').value.trim();
-            let phone = document.getElementById('dealerPhone').value.trim();
-            let driver = document.getElementById('driverName').value.trim();
-            let vehicle = document.getElementById('vehicleNo').value.trim();
-
-            if(!dealer || !phone || !driver || !vehicle) {
-                alert("कृपया सर्व माहिती अचूक भरा!");
-                return;
-            }
-
-            if(currentScannedBundles.length === 0) {
-                alert("कृपया किमान एक बारकोड स्कॅन करा!");
-                return;
-            }
-
-            let currentStock = productStock[cat] || 0;
-            if(currentStock < currentScannedBundles.length) {
-                alert(`⚠️ पुरेशी स्टॉक उपलब्ध नाही! सध्याचा स्टॉक: ${currentStock} Pcs`);
-                return;
-            }
-
-            let otp = Math.floor(1000 + Math.random() * 9000).toString();
-            let shipmentId = "SHP-" + Date.now();
-
-            let newShipment = {
-                id: shipmentId,
-                date: getCurrentFormattedDateTime(),
-                product: cat,
-                dealer: dealer,
-                phone: phone,
-                driver: driver,
-                vehicle: vehicle,
-                dispatchedBundles: [...currentScannedBundles],
-                receivedBundles: [],
-                damagedBundles: [],
-                missingBundles: [],
-                otp: otp,
-                status: 'IN_TRANSIT'
-            };
-
-            productStock[cat] -= currentScannedBundles.length;
-            saveLocalStock();
-
-            syncToCloud('DISPATCH', newShipment, null);
-
-            currentScannedBundles = [];
-            renderScannedTags();
-            document.getElementById('dealerName').value = "";
-            document.getElementById('dealerPhone').value = "";
-            
-            let msg = `*SHRI EKVIRA MFG COATS PVT LTD*\n🚚 *Dispatch OTP Notification*\n\nDear Dealer ${dealer},\nYour shipment for ${newShipment.product} (${newShipment.dispatchedBundles.length} Bundles) is dispatched.\n\n*Vehicle No:* ${vehicle}\n*Driver:* ${driver}\n*Delivery Confirmation OTP:* ${otp}`;
-            window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
-        function renderTable() {
-            let tbody = document.getElementById('dispatchTableBody');
-            if(!tbody) return;
-
-            if(shipments.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">नो शिपमेंट रेकॉर्ड सापडले नाहीत.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = "";
-            shipments.forEach(s => {
-                let dispQty = s.dispatchedBundles ? s.dispatchedBundles.length : 0;
-                let recQty = s.receivedBundles ? s.receivedBundles.length : 0;
-                let damQty = s.damagedBundles ? s.damagedBundles.length : 0;
-                let misQty = s.missingBundles ? s.missingBundles.length : 0;
-
-                let statusBadge = s.status === 'IN_TRANSIT' 
-                    ? `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">🚚 In-Transit</span>`
-                    : `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">✅ Delivered</span>`;
-
-                let actionBtn = s.status === 'IN_TRANSIT'
-                    ? `<button onclick="openDeliveryModal('${s.id}')" class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] px-2.5 py-1 rounded font-bold shadow">🔍 Audit & Confirm</button>`
-                    : `<span class="text-xs text-gray-400 font-semibold">Confirmed</span>`;
-
-                tbody.innerHTML += `
-                    <tr class="border-b hover:bg-slate-50">
-                        <td class="p-2 border">
-                            <div class="font-bold text-blue-900">${s.dealer}</div>
-                            <div class="text-[10px] text-gray-500">${s.date} | ${s.product}</div>
-                            <div class="text-[10px] text-gray-600">🚚 ${s.driver} (${s.vehicle})</div>
-                        </td>
-                        <td class="p-2 border text-center font-bold text-gray-800">${dispQty} Pcs</td>
-                        <td class="p-2 border text-center font-bold text-emerald-600">${recQty} Pcs</td>
-                        <td class="p-2 border text-center">
-                            <span class="text-orange-600 font-bold">${damQty} Damaged</span> / 
-                            <span class="text-red-600 font-bold">${misQty} Missing</span>
-                        </td>
-                        <td class="p-2 border text-center space-y-1">
-                            <div>${statusBadge}</div>
-                            <div>${actionBtn}</div>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        function openDeliveryModal(id) {
-            activeShipment = shipments.find(s => s.id === id);
-            if(!activeShipment) return;
-
-            document.getElementById('deliveryModalInfo').innerHTML = `
-                <div><b>Dealer:</b> ${activeShipment.dealer} (${activeShipment.phone})</div>
-                <div><b>Product:</b> ${activeShipment.product} | <b>Vehicle:</b> ${activeShipment.vehicle}</div>
-            `;
-
-            document.getElementById('calcDispatched').innerText = `${activeShipment.dispatchedBundles.length} Pcs`;
-            
-            let checklist = document.getElementById('bundleChecklist');
-            checklist.innerHTML = "";
-
-            activeShipment.dispatchedBundles.forEach(bCode => {
-                checklist.innerHTML += `
-                    <div class="flex justify-between items-center bg-white p-1.5 border rounded">
-                        <span class="font-mono font-bold text-gray-800">${bCode}</span>
-                        <select id="status_${bCode}" onchange="recalculateDeliveryModal()" class="border text-[11px] rounded p-1 font-semibold">
-                            <option value="OK">✅ Delivered OK</option>
-                            <option value="DAMAGED">💔 Damaged</option>
-                            <option value="MISSING">❌ Missing / Stolen</option>
-                        </select>
-                    </div>
-                `;
-            });
-
-            recalculateDeliveryModal();
-            document.getElementById('deliveryModal').classList.remove('hidden');
-        }
-
-        function recalculateDeliveryModal() {
-            if(!activeShipment) return;
-            let total = activeShipment.dispatchedBundles.length;
-            let damaged = 0;
-            let missing = 0;
-
-            activeShipment.dispatchedBundles.forEach(bCode => {
-                let val = document.getElementById(`status_${bCode}`).value;
-                if(val === 'DAMAGED') damaged++;
-                if(val === 'MISSING') missing++;
-            });
-
-            let netDelivered = total - (damaged + missing);
-
-            document.getElementById('calcIssues').innerText = `${damaged + missing} Pcs`;
-            document.getElementById('calcNetDelivered').innerText = `${netDelivered} Pcs`;
-        }
-
-        function closeDeliveryModal() {
-            document.getElementById('deliveryModal').classList.add('hidden');
-            if(html5QrCode && isCameraActive) {
-                html5QrCode.stop().then(() => {
-                    isCameraActive = false;
-                    document.getElementById('cameraScannerBox').classList.add('hidden');
+        // CLOUD SYNC & UTILS
+        function fetchCloudShipments() {
+            fetch(GOOGLE_SCRIPT_URL)
+                .then(res => res.json())
+                .then(data => {
+                    if(data.batchHistory && Array.isArray(data.batchHistory)) {
+                        batchHistory = data.batchHistory;
+                        localStorage.setItem('ekvira_batch_history', JSON.stringify(batchHistory));
+                        renderInwardHistory();
+                    }
+                    document.getElementById('syncStatus').innerText = "✅ Cloud Connected";
+                    document.getElementById('syncStatus').className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
+                })
+                .catch(() => {
+                    document.getElementById('syncStatus').innerText = "⚠️ Offline Mode";
+                    document.getElementById('syncStatus').className = "text-[10px] bg-red-600 text-white font-bold px-2 py-1 rounded";
                 });
-            }
         }
 
-        let isCameraActive = false;
-        function toggleCameraScanner() {
-            let box = document.getElementById('cameraScannerBox');
-            let btn = document.getElementById('toggleCamBtn');
+        function syncToCloud(actionType, shipmentData, extraId) {
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: actionType, shipment: shipmentData, id: extraId, batchHistory: batchHistory })
+            });
+        }
 
-            if(!isCameraActive) {
-                box.classList.remove('hidden');
-                html5QrCode = new Html5Qrcode("reader");
-                html5QrCode.start(
-                    { facingMode: "environment" },
-                    { fps: 10, qrbox: { width: 250, height: 150 } },
-                    (decodedText) => {
-                        let code = decodedText.trim().toUpperCase();
-                        let select = document.getElementById(`status_${code}`);
-                        if(select) {
-                            select.value = 'DAMAGED';
-                            recalculateDeliveryModal();
-                            alert(`🚨 Bundle ${code} marked as DAMAGED!`);
-                        }
-                    },
-                    (errorMessage) => {}
-                );
-                isCameraActive = true;
-                btn.innerText = "✕ Close Camera";
+        function switchRole(role) {
+            const adminElements = document.querySelectorAll('.admin-only');
+            const storeElements = document.querySelectorAll('.store-visible');
+            if (role === 'DRIVER') {
+                adminElements.forEach(el => el.classList.add('hidden'));
             } else {
-                html5QrCode.stop().then(() => {
-                    isCameraActive = false;
-                    box.classList.add('hidden');
-                    btn.innerText = "📷 Open Mobile Camera";
-                });
+                adminElements.forEach(el => el.classList.remove('hidden'));
+                storeElements.forEach(el => el.classList.remove('hidden'));
             }
-        }
-
-        function confirmIndividualDelivery() {
-            if(!activeShipment) return;
-            let inputOtp = document.getElementById('deliveryOtpInput').value.trim();
-
-            if(inputOtp !== activeShipment.otp) {
-                alert("❌ चुकीचा OTP! कृपया अचूक OTP प्रविष्ट करा.");
-                return;
-            }
-
-            let received = [];
-            let damaged = [];
-            let missing = [];
-
-            activeShipment.dispatchedBundles.forEach(bCode => {
-                let val = document.getElementById(`status_${bCode}`).value;
-                if(val === 'OK') received.push(bCode);
-                if(val === 'DAMAGED') damaged.push(bCode);
-                if(val === 'MISSING') missing.push(bCode);
-            });
-
-            activeShipment.receivedBundles = received;
-            activeShipment.damagedBundles = damaged;
-            activeShipment.missingBundles = missing;
-            activeShipment.status = 'DELIVERED';
-
-            syncToCloud('CONFIRM_DELIVERY', activeShipment, null);
-
-            closeDeliveryModal();
-            alert("✅ डिलीव्हरी यशस्वीरीत्या कन्फर्म झाली आहे!");
-        }
-
-        function renderFactoryReturns() {
-            let container = document.getElementById('factoryReturnList');
-            let badge = document.getElementById('pendingReturnBadge');
-            if(!container) return;
-
-            let pendingReturns = [];
-            shipments.forEach(s => {
-                if(s.damagedBundles && s.damagedBundles.length > 0 && !s.returnVerified) {
-                    pendingReturns.push(s);
-                }
-            });
-
-            if(badge) badge.innerText = `${pendingReturns.length} Pending Verification`;
-
-            if(pendingReturns.length === 0) {
-                container.innerHTML = `<div class="text-center text-orange-200 py-2">No damaged returns pending verification.</div>`;
-                return;
-            }
-
-            container.innerHTML = "";
-            pendingReturns.forEach(s => {
-                container.innerHTML += `
-                    <div class="bg-orange-950 p-2 rounded border border-orange-700 flex justify-between items-center">
-                        <div>
-                            <div class="font-bold text-amber-300">${s.dealer} - ${s.product}</div>
-                            <div class="text-[10px] text-gray-300">Damaged Pcs: ${s.damagedBundles.join(', ')}</div>
-                        </div>
-                        <button onclick="verifyReturnStock('${s.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded text-[11px]">
-                            ✅ Re-Inward to Store Stock
-                        </button>
-                    </div>
-                `;
-            });
-        }
-
-        function verifyReturnStock(shipmentId) {
-            let shipment = shipments.find(s => s.id === shipmentId);
-            if(!shipment) return;
-
-            let damQty = shipment.damagedBundles.length;
-            productStock[shipment.product] = (productStock[shipment.product] || 0) + damQty;
-            saveLocalStock();
-
-            shipment.returnVerified = true;
-            syncToCloud('VERIFY_RETURN', shipment, null);
-
-            alert(`✅ ${damQty} Pcs Damaged Stock returned and re-added to Store Stock!`);
-        }
-
-        function exportExcel() {
-            let wb = XLSX.utils.book_new();
-            let data = shipments.map(s => ({
-                "Shipment ID": s.id,
-                "Date": s.date,
-                "Product": s.product,
-                "Dealer": s.dealer,
-                "Phone": s.phone,
-                "Driver": s.driver,
-                "Vehicle": s.vehicle,
-                "Dispatched Qty": s.dispatchedBundles.length,
-                "Delivered OK Qty": s.receivedBundles.length,
-                "Damaged Qty": s.damagedBundles.length,
-                "Missing Qty": s.missingBundles.length,
-                "Status": s.status
-            }));
-
-            let ws = XLSX.utils.json_to_sheet(data);
-            XLSX.utils.book_append_sheet(wb, ws, "Shipments");
-            XLSX.writeFile(wb, "Ekvira_ERP_Delivery_Report.xlsx");
         }
     </script>
 </body>
