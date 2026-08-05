@@ -96,8 +96,8 @@
 
         <!-- PRODUCTION INWARD & DIRECT STOCK EDIT -->
         <div id="storeInwardCard" class="admin-only store-visible grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-indigo-900 text-white rounded-xl shadow p-4 border border-indigo-800 md:col-span-2">
-                <div class="flex justify-between items-center border-b border-indigo-700 pb-2 mb-3">
+            <div class="bg-indigo-900 text-white rounded-xl shadow p-4 border border-indigo-800 md:col-span-2 space-y-3">
+                <div class="flex justify-between items-center border-b border-indigo-700 pb-2">
                     <h3 class="text-md font-bold flex items-center gap-2">🏭 Production to Store Inward Entry</h3>
                 </div>
                 <form id="mfgInwardForm" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
@@ -118,12 +118,33 @@
                         <label class="block font-medium text-indigo-200">Quantity (Bundles)</label>
                         <input type="number" id="mfgQty" min="1" class="w-full border rounded p-2 mt-1 text-black font-bold" placeholder="e.g. 500" required>
                     </div>
-                    <div class="flex items-end">
+                    <div class="flex items-end gap-2">
                         <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded text-xs transition shadow">
                             📥 Add Stock
                         </button>
                     </div>
                 </form>
+
+                <!-- INWARD HISTORY WITH BATCH & MANUFACTURED AT DATA -->
+                <div class="mt-3 border-t border-indigo-800 pt-2">
+                    <h4 class="text-xs font-bold text-indigo-200 mb-2">📦 Recent Production Batches & Label Printing:</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-[11px] text-left text-slate-200 border border-indigo-800">
+                            <thead class="bg-indigo-950 text-indigo-200 font-bold">
+                                <tr>
+                                    <th class="p-1.5 border border-indigo-800">Batch No</th>
+                                    <th class="p-1.5 border border-indigo-800">Manufactured At</th>
+                                    <th class="p-1.5 border border-indigo-800">Product</th>
+                                    <th class="p-1.5 border border-indigo-800 text-center">Qty</th>
+                                    <th class="p-1.5 border border-indigo-800 text-center">TSC Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inwardHistoryBody">
+                                <tr><td colspan="5" class="p-2 text-center text-indigo-300">No batch records yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <!-- MANUAL STOCK EDIT / CORRECTION FEATURE (ADMIN ONLY) -->
@@ -220,7 +241,7 @@
             </div>
 
             <!-- SHIPMENT LEDGER -->
-            <div id="shipmentsCard" class="bg-white rounded-xl shadow p-4 lg:col-span-3 border space-y-4">
+            <div id="shipmentsCard" class="bg-white rounded-xl shadow p-4 lg:col-span-2 border space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
                     <h3 class="text-md font-bold text-gray-800" id="tableTitle">📋 Delivery Audit & Dispatch Ledger</h3>
                     <button id="excelBtn" onclick="exportExcel()" class="admin-only store-visible bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-2.5 py-1 rounded font-medium shadow">Export Excel</button>
@@ -311,6 +332,8 @@
             "Submain Pipe": 0
         };
 
+        let batchHistory = JSON.parse(localStorage.getItem('ekvira_batch_history')) || [];
+
         let shipments = [];
         let currentScannedBundles = [];
         let activeShipment = null;
@@ -324,14 +347,14 @@
             const urlParams = new URLSearchParams(window.location.search);
             const mode = urlParams.get('mode');
             
-            // IF DRIVER MODE IS SET IN URL, LOCK ROLE SELECTOR
             if (mode === 'driver') {
                 document.getElementById('userRole').value = 'DRIVER';
-                document.getElementById('userRole').classList.add('hidden'); // LOCK SWITCHING
+                document.getElementById('userRole').classList.add('hidden');
             }
             
             switchRole(document.getElementById('userRole').value);
             fetchCloudShipments();
+            renderInwardHistory();
         };
 
         function switchRole(role) {
@@ -348,10 +371,10 @@
             } else if (role === 'STORE') {
                 adminElements.forEach(el => el.classList.add('hidden'));
                 storeElements.forEach(el => el.classList.remove('hidden'));
-                if(directEdit) directEdit.classList.add('hidden'); // STORE CANNOT DIRECTLY EDIT STOCK
+                if(directEdit) directEdit.classList.add('hidden');
                 shipmentsCard.classList.remove('lg:col-span-3');
                 shipmentsCard.classList.add('lg:col-span-2');
-            } else { // FACTORY ADMIN
+            } else {
                 adminElements.forEach(el => el.classList.remove('hidden'));
                 shipmentsCard.classList.remove('lg:col-span-3');
                 shipmentsCard.classList.add('lg:col-span-2');
@@ -361,6 +384,10 @@
 
         function saveLocalStock() {
             localStorage.setItem('ekvira_stock', JSON.stringify(productStock));
+        }
+
+        function saveBatchHistory() {
+            localStorage.setItem('ekvira_batch_history', JSON.stringify(batchHistory));
         }
 
         function getCurrentFormattedDateTime() {
@@ -373,7 +400,12 @@
             fetch(GOOGLE_SCRIPT_URL)
                 .then(res => res.json())
                 .then(data => {
-                    shipments = data || [];
+                    shipments = data.shipments || data || [];
+                    if(data.batchHistory) {
+                        batchHistory = data.batchHistory;
+                        saveBatchHistory();
+                        renderInwardHistory();
+                    }
                     updateStats();
                     renderTable();
                     renderFactoryReturns();
@@ -391,7 +423,7 @@
             document.getElementById('syncStatus').innerText = "☁️ Saving to Cloud...";
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
-                body: JSON.stringify({ action: actionType, shipment: shipmentData, id: extraId })
+                body: JSON.stringify({ action: actionType, shipment: shipmentData, id: extraId, batchHistory: batchHistory })
             })
             .then(res => res.json())
             .then(() => {
@@ -492,18 +524,90 @@
             if(document.getElementById('statMissing')) document.getElementById('statMissing').innerText = totalMissing + " Pcs";
         }
 
+        // PRODUCTION INWARD SUBMIT WITH MANUFACTUREDAT & BATCHNO
         document.getElementById('mfgInwardForm').addEventListener('submit', function(e){
             e.preventDefault();
             let cat = document.getElementById('mfgCategory').value;
+            let batchHeader = document.getElementById('mfgBatchNo').value.trim().toUpperCase();
             let qty = parseInt(document.getElementById('mfgQty').value) || 0;
             if(qty <= 0) return;
+
+            let manufacturedAt = getCurrentFormattedDateTime();
+
+            let batchRecord = {
+                batchNo: batchHeader,
+                manufacturedAt: manufacturedAt,
+                product: cat,
+                qty: qty
+            };
+
+            batchHistory.unshift(batchRecord);
+            saveBatchHistory();
 
             productStock[cat] = (productStock[cat] || 0) + qty;
             saveLocalStock();
             updateStats();
-            alert(`✅ Stock Added!\nProduct: ${cat}\nQty: ${qty} Bundles`);
+            renderInwardHistory();
+
+            syncToCloud('ADD_BATCH', null, null);
+
+            alert(`✅ Production Batch Added!\nBatch No: ${batchHeader}\nManufactured At: ${manufacturedAt}\nProduct: ${cat}\nQty: ${qty} Bundles`);
             document.getElementById('mfgInwardForm').reset();
         });
+
+        function renderInwardHistory() {
+            let body = document.getElementById('inwardHistoryBody');
+            if(!body) return;
+
+            if(batchHistory.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" class="p-2 text-center text-indigo-300">No batch records yet.</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = "";
+            batchHistory.slice(0, 5).forEach((b) => {
+                body.innerHTML += `
+                    <tr class="border-b border-indigo-800 hover:bg-indigo-900/50">
+                        <td class="p-1.5 font-mono font-bold text-amber-300">${b.batchNo}</td>
+                        <td class="p-1.5 text-[10px] text-gray-300">${b.manufacturedAt}</td>
+                        <td class="p-1.5 text-gray-200">${b.product}</td>
+                        <td class="p-1.5 text-center font-bold text-emerald-400">${b.qty} Pcs</td>
+                        <td class="p-1.5 text-center">
+                            <button onclick="printTscLabel('${b.batchNo}', '${b.product}', '${b.manufacturedAt}')" class="bg-amber-500 hover:bg-amber-600 text-black px-2 py-0.5 rounded text-[10px] font-bold shadow">
+                                🖨️ Print Label
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // DIRECT TSC PRINTER DIRECT WEB PRINTING (TSPL COMMAND)
+        function printTscLabel(batchNo, product, mfgTime) {
+            let tsplCommand = 
+`SIZE 100 mm, 50 mm
+GAP 2 mm, 0 mm
+DIRECTION 1
+CLS
+TEXT 50,30,"3",0,1,1,"SHRI EKVIRA MFG COATS"
+TEXT 50,70,"2",0,1,1,"Product: ${product}"
+TEXT 50,105,"2",0,1,1,"Mfg Date/Time: ${mfgTime}"
+TEXT 50,140,"2",0,1,1,"Batch No: ${batchNo}"
+BARCODE 50,185,"128",80,1,0,2,2,"${batchNo}"
+PRINT 1,1
+`;
+
+            let printWindow = window.open('', '', 'width=400,height=300');
+            printWindow.document.write('<pre>' + tsplCommand + '</pre>');
+            printWindow.document.close();
+            
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 500);
+
+            alert(`🖨️ Printing Label for Batch: ${batchNo}\nRaw TSPL barcode string generated.`);
+        }
 
         const gunInput = document.getElementById('gunBarcodeInput');
         if(gunInput) {
@@ -553,6 +657,15 @@
                 return;
             }
 
+            let available = productStock[category] || 0;
+            if (available < currentScannedBundles.length) {
+                if (!confirm(`⚠️ Stock Alert: Storage block current stock (${available} Pcs) is lower than dispatched qty (${currentScannedBundles.length} Pcs). Proceed anyway?`)) {
+                    return;
+                }
+            }
+
+            let generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
             const shipment = {
                 id: Date.now(),
                 dispatchDateTime: getCurrentFormattedDateTime(),
@@ -565,277 +678,291 @@
                 receivedBundles: [],
                 damagedBundles: [],
                 missingBundles: [],
-                status: 'IN_TRANSIT',
-                deliveredDateTime: '',
-                otp: Math.floor(1000 + Math.random() * 9000).toString(),
-                returnVerified: false
+                otp: generatedOtp,
+                status: 'IN_TRANSIT'
             };
 
-            productStock[category] = Math.max(0, (productStock[category] || 0) - shipment.dispatchedBundles.length);
+            productStock[category] = Math.max(0, available - currentScannedBundles.length);
             saveLocalStock();
 
-            syncToCloud("ADD", shipment);
+            syncToCloud('CREATE', shipment);
 
             currentScannedBundles = [];
             renderScannedTags();
+            document.getElementById('dealerName').value = '';
+            document.getElementById('dealerPhone').value = '';
 
-            triggerWhatsAppMessage(shipment);
-        }
-
-        function triggerWhatsAppMessage(shipment) {
-            let msg = `🚚 *SHRI EKVIRA MFG COATS PVT LTD*\n*DISPATCH NOTICE*\n\nDear Dealer: ${shipment.dealerName}\nProduct: ${shipment.product}\nDispatched Qty: ${shipment.dispatchedBundles.length} Bundles\nVehicle No: ${shipment.vehicleNo}\nDriver: ${shipment.driverName}\n\n🔑 *Delivery OTP: ${shipment.otp}*\n\nPlease share this OTP with driver upon verifying physical delivery.`;
-            let url = `https://api.whatsapp.com/send?phone=91${shipment.dealerPhone}&text=${encodeURIComponent(msg)}`;
-            window.open(url, '_blank');
+            let waMsg = `Hello ${dealer}, your shipment of ${shipment.dispatchedBundles.length} bundles (${category}) has been dispatched via vehicle ${vehicle}.\n\nYour Delivery Verification OTP is: *${generatedOtp}*`;
+            window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(waMsg)}`, '_blank');
         }
 
         function renderTable() {
-            let tbody = document.getElementById('dispatchTableBody');
-            if(!tbody) return;
-            tbody.innerHTML = "";
+            let body = document.getElementById('dispatchTableBody');
+            if(!body) return;
+            body.innerHTML = "";
 
             if(shipments.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">कोणतीही Dispatch Entry उपलब्ध नाही.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">No shipments found.</td></tr>`;
                 return;
             }
 
             shipments.forEach(s => {
-                let statusBadge = s.status === 'DELIVERED' 
+                let dispCount = s.dispatchedBundles ? s.dispatchedBundles.length : 0;
+                let recCount = s.receivedBundles ? s.receivedBundles.length : 0;
+                let damCount = s.damagedBundles ? s.damagedBundles.length : 0;
+                let misCount = s.missingBundles ? s.missingBundles.length : 0;
+
+                let isDelivered = s.status === 'DELIVERED';
+                let statusBadge = isDelivered 
                     ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">✅ Delivered</span>`
-                    : `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">🚚 In-Transit</span>`;
+                    : `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">🚚 In-Transit</span>`;
 
-                let actionBtn = s.status === 'IN_TRANSIT'
-                    ? `<button onclick="openDeliveryModal(${s.id})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-2.5 py-1 rounded shadow">📲 Delivery Audit</button>`
-                    : `<span class="text-[10px] text-gray-500 font-mono">${s.deliveredDateTime || 'Verified'}</span>`;
+                let actionBtn = isDelivered
+                    ? `<button onclick="openDeliveryModal(${s.id})" class="bg-slate-200 text-slate-700 px-2 py-1 rounded text-[11px] font-bold">👁️ View Details</button>`
+                    : `<button onclick="openDeliveryModal(${s.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded text-[11px] font-bold shadow">📦 Audit & Confirm</button>`;
 
-                let deleteBtn = activeRole === 'FACTORY' ? `<button onclick="deleteShipment(${s.id})" class="text-red-500 hover:text-red-700 font-bold ml-2 text-xs" title="Delete Entry">🗑️</button>` : '';
+                let deleteBtn = activeRole === 'FACTORY' 
+                    ? `<button onclick="deleteShipment(${s.id})" class="text-red-500 hover:text-red-700 font-bold ml-2">🗑️</button>` 
+                    : '';
 
-                tbody.innerHTML += `
+                body.innerHTML += `
                     <tr class="border-b hover:bg-slate-50">
                         <td class="p-2 border">
                             <div class="font-bold text-blue-900">${s.dealerName}</div>
-                            <div class="text-[10px] text-gray-500">${s.product} | ${s.dispatchDateTime}</div>
-                            <div class="text-[10px] font-mono text-gray-600">Driver: ${s.driverName} (${s.vehicleNo})</div>
+                            <div class="text-[10px] text-gray-500">${s.dispatchDateTime} | 📱 ${s.dealerPhone}</div>
+                            <div class="text-[10px] text-indigo-700 font-semibold">${s.product} | 🚚 ${s.vehicleNo} (${s.driverName})</div>
                         </td>
-                        <td class="p-2 border text-center font-bold text-gray-800">${s.dispatchedBundles ? s.dispatchedBundles.length : 0} Pcs</td>
-                        <td class="p-2 border text-center font-bold text-emerald-600">${s.receivedBundles ? s.receivedBundles.length : 0} Pcs</td>
-                        <td class="p-2 border text-center font-semibold text-orange-600">
-                            ${s.damagedBundles ? s.damagedBundles.length : 0} Dmg / ${s.missingBundles ? s.missingBundles.length : 0} Miss
+                        <td class="p-2 border text-center font-bold text-gray-700">${dispCount} Pcs</td>
+                        <td class="p-2 border text-center font-bold text-emerald-600">${isDelivered ? recCount + ' Pcs' : '-'}</td>
+                        <td class="p-2 border text-center">
+                            ${isDelivered ? `<span class="text-orange-600 font-bold">${damCount} Dmg</span> / <span class="text-red-600 font-bold">${misCount} Mis</span>` : '-'}
                         </td>
-                        <td class="p-2 border text-center space-y-1">
-                            <div>${statusBadge}</div>
-                            <div class="flex justify-center items-center">${actionBtn} ${deleteBtn}</div>
+                        <td class="p-2 border text-center">
+                            <div class="flex items-center justify-center gap-1">
+                                ${statusBadge}
+                                ${actionBtn}
+                                ${deleteBtn}
+                            </div>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        function renderFactoryReturns() {
-            let container = document.getElementById('factoryReturnList');
-            let badge = document.getElementById('pendingReturnBadge');
-            if(!container || !badge) return;
+        function openDeliveryModal(id) {
+            activeShipment = shipments.find(s => s.id === id);
+            if(!activeShipment) return;
 
-            let pendingReturns = shipments.filter(s => s.status === 'DELIVERED' && s.damagedBundles && s.damagedBundles.length > 0 && !s.returnVerified);
+            let infoBox = document.getElementById('deliveryModalInfo');
+            infoBox.innerHTML = `
+                <div><b>Dealer:</b> ${activeShipment.dealerName} (${activeShipment.dealerPhone})</div>
+                <div><b>Product:</b> ${activeShipment.product} | <b>Vehicle:</b> ${activeShipment.vehicleNo}</div>
+            `;
 
-            badge.innerText = `${pendingReturns.length} Pending Verification`;
+            let checklist = document.getElementById('bundleChecklist');
+            checklist.innerHTML = "";
 
-            if(pendingReturns.length === 0) {
-                container.innerHTML = `<div class="text-center text-orange-200 py-2">No damaged returns pending verification.</div>`;
+            let isDelivered = activeShipment.status === 'DELIVERED';
+
+            activeShipment.dispatchedBundles.forEach((b, idx) => {
+                let status = 'OK';
+                if(isDelivered) {
+                    if(activeShipment.damagedBundles.includes(b)) status = 'DAMAGED';
+                    else if(activeShipment.missingBundles.includes(b)) status = 'MISSING';
+                }
+
+                checklist.innerHTML += `
+                    <div class="flex items-center justify-between p-1 bg-white rounded border">
+                        <span class="font-mono font-bold">${b}</span>
+                        <select id="bundle_status_${idx}" onchange="recalculateDeliveryTotals()" ${isDelivered ? 'disabled' : ''} class="border rounded p-1 text-[11px] font-semibold">
+                            <option value="OK" ${status === 'OK' ? 'selected' : ''}>✅ OK (Delivered)</option>
+                            <option value="DAMAGED" ${status === 'DAMAGED' ? 'selected' : ''}>💔 Damaged</option>
+                            <option value="MISSING" ${status === 'MISSING' ? 'selected' : ''}>❌ Missing / Stolen</option>
+                        </select>
+                    </div>
+                `;
+            });
+
+            document.getElementById('deliveryOtpInput').value = "";
+            document.getElementById('deliveryModal').classList.remove('hidden');
+            recalculateDeliveryTotals();
+        }
+
+        function recalculateDeliveryTotals() {
+            if(!activeShipment) return;
+            let total = activeShipment.dispatchedBundles.length;
+            let ok = 0, issues = 0;
+
+            activeShipment.dispatchedBundles.forEach((_, idx) => {
+                let el = document.getElementById(`bundle_status_${idx}`);
+                if(el && el.value === 'OK') ok++;
+                else issues++;
+            });
+
+            document.getElementById('calcDispatched').innerText = `${total} Pcs`;
+            document.getElementById('calcIssues').innerText = `${issues} Pcs`;
+            document.getElementById('calcNetDelivered').innerText = `${ok} Pcs`;
+        }
+
+        function confirmIndividualDelivery() {
+            if(!activeShipment) return;
+            if(activeShipment.status === 'DELIVERED') {
+                alert("ही डिलिव्हरी आधीच कन्फर्म झाली आहे!");
+                closeDeliveryModal();
                 return;
             }
 
-            container.innerHTML = "";
+            let enteredOtp = document.getElementById('deliveryOtpInput').value.trim();
+            if(enteredOtp !== activeShipment.otp) {
+                alert("❌ चुकीचा OTP! कृपया Dealer कडून आलेला योग्य OTP टाका.");
+                return;
+            }
+
+            let okBundles = [];
+            let damagedBundles = [];
+            let missingBundles = [];
+
+            activeShipment.dispatchedBundles.forEach((b, idx) => {
+                let val = document.getElementById(`bundle_status_${idx}`).value;
+                if(val === 'OK') okBundles.push(b);
+                else if(val === 'DAMAGED') damagedBundles.push(b);
+                else if(val === 'MISSING') missingBundles.push(b);
+            });
+
+            activeShipment.receivedBundles = okBundles;
+            activeShipment.damagedBundles = damagedBundles;
+            activeShipment.missingBundles = missingBundles;
+            activeShipment.status = 'DELIVERED';
+
+            syncToCloud('UPDATE', activeShipment);
+            closeDeliveryModal();
+            alert("✅ Delivery Successfully Audited & Verified via OTP!");
+        }
+
+        function resendWhatsAppOtp() {
+            if(!activeShipment) return;
+            let waMsg = `Reminder: Your Delivery OTP for ${activeShipment.product} is *${activeShipment.otp}*`;
+            window.open(`https://wa.me/91${activeShipment.dealerPhone}?text=${encodeURIComponent(waMsg)}`, '_blank');
+        }
+
+        function closeDeliveryModal() {
+            document.getElementById('deliveryModal').classList.add('hidden');
+            stopCameraScanner();
+        }
+
+        function toggleCameraScanner() {
+            if(isCameraActive) stopCameraScanner();
+            else startCameraScanner();
+        }
+
+        function startCameraScanner() {
+            document.getElementById('cameraScannerBox').classList.remove('hidden');
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 150 } },
+                (decodedText) => {
+                    let text = decodedText.trim().toUpperCase();
+                    activeShipment.dispatchedBundles.forEach((b, idx) => {
+                        if(b === text) {
+                            let select = document.getElementById(`bundle_status_${idx}`);
+                            if(select) {
+                                select.value = 'DAMAGED';
+                                recalculateDeliveryTotals();
+                                try { beepAudio.play(); } catch(e){}
+                            }
+                        }
+                    });
+                },
+                () => {}
+            ).then(() => {
+                isCameraActive = true;
+                document.getElementById('toggleCamBtn').innerText = "🛑 Close Camera";
+            }).catch(err => {
+                console.error(err);
+                alert("कॅमेरा सुरू करताना त्रुटी आली!");
+            });
+        }
+
+        function stopCameraScanner() {
+            if(html5QrCode && isCameraActive) {
+                html5QrCode.stop().then(() => {
+                    isCameraActive = false;
+                    document.getElementById('cameraScannerBox').classList.add('hidden');
+                    document.getElementById('toggleCamBtn').innerText = "📷 Open Mobile Camera";
+                }).catch(err => console.error(err));
+            }
+        }
+
+        function renderFactoryReturns() {
+            let list = document.getElementById('factoryReturnList');
+            let badge = document.getElementById('pendingReturnBadge');
+            if(!list) return;
+
+            let pendingReturns = [];
+            shipments.forEach(s => {
+                if(s.status === 'DELIVERED' && s.damagedBundles && s.damagedBundles.length > 0 && !s.returnVerified) {
+                    pendingReturns.push(s);
+                }
+            });
+
+            if(badge) badge.innerText = `${pendingReturns.length} Pending Verification`;
+
+            if(pendingReturns.length === 0) {
+                list.innerHTML = `<div class="text-center text-orange-200 py-2">No damaged returns pending verification.</div>`;
+                return;
+            }
+
+            list.innerHTML = "";
             pendingReturns.forEach(s => {
-                container.innerHTML += `
-                    <div class="bg-orange-800 p-2 rounded flex justify-between items-center border border-orange-700">
+                list.innerHTML += `
+                    <div class="bg-orange-950/60 p-2 rounded border border-orange-700 flex justify-between items-center">
                         <div>
-                            <div class="font-bold text-white">${s.dealerName} (${s.product})</div>
-                            <div class="text-[10px] text-orange-200">Damaged Bundles (${s.damagedBundles.length}): ${s.damagedBundles.join(', ')}</div>
+                            <b>${s.dealerName}</b> (${s.product})
+                            <div class="text-[10px] text-orange-300">Damaged Pcs: ${s.damagedBundles.join(', ')}</div>
                         </div>
-                        <button onclick="verifyFactoryReturn(${s.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-2 py-1 rounded text-[11px] shadow">
-                            ✅ Receive Damaged Bundles
+                        <button onclick="verifyFactoryReturn(${s.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded text-[10px]">
+                            ✅ Verify & Re-Inward Stock
                         </button>
                     </div>
                 `;
             });
         }
 
-        function verifyFactoryReturn(shipmentId) {
-            let shipment = shipments.find(s => s.id === shipmentId);
+        function verifyFactoryReturn(id) {
+            let shipment = shipments.find(s => s.id === id);
             if(!shipment) return;
 
+            let qty = shipment.damagedBundles.length;
+            let cat = shipment.product;
+
+            productStock[cat] = (productStock[cat] || 0) + qty;
+            saveLocalStock();
+
             shipment.returnVerified = true;
-            syncToCloud("UPDATE", shipment);
-            alert(`✅ Damaged Bundles Verified & Logged in Factory Return System!`);
-        }
-
-        function openDeliveryModal(id) {
-            activeShipment = shipments.find(s => s.id === id);
-            if(!activeShipment) return;
-
-            document.getElementById('deliveryModalInfo').innerHTML = `
-                <div><b>Dealer:</b> ${activeShipment.dealerName} (${activeShipment.dealerPhone})</div>
-                <div><b>Product:</b> ${activeShipment.product} | <b>Vehicle:</b> ${activeShipment.vehicleNo}</div>
-            `;
-
-            document.getElementById('calcDispatched').innerText = `${activeShipment.dispatchedBundles.length} Pcs`;
-            
-            renderBundleChecklist();
-            updateModalCalculations();
-
-            document.getElementById('deliveryModal').classList.remove('hidden');
-        }
-
-        function closeDeliveryModal() {
-            if(isCameraActive) stopCameraScanner();
-            document.getElementById('deliveryModal').classList.add('hidden');
-            activeShipment = null;
-        }
-
-        function renderBundleChecklist() {
-            let container = document.getElementById('bundleChecklist');
-            container.innerHTML = "";
-
-            activeShipment.dispatchedBundles.forEach(bundleId => {
-                container.innerHTML += `
-                    <div class="flex justify-between items-center bg-white p-1.5 rounded border">
-                        <span class="font-mono font-bold text-gray-800">${bundleId}</span>
-                        <select id="status_${bundleId}" onchange="updateModalCalculations()" class="border rounded p-1 text-[11px] font-bold">
-                            <option value="OK">✅ OK Delivered</option>
-                            <option value="DAMAGED">💔 Damaged</option>
-                            <option value="MISSING">❌ Missing/Stolen</option>
-                        </select>
-                    </div>
-                `;
-            });
-        }
-
-        function updateModalCalculations() {
-            if(!activeShipment) return;
-
-            let okCount = 0;
-            let issueCount = 0;
-
-            activeShipment.dispatchedBundles.forEach(bundleId => {
-                let select = document.getElementById(`status_${bundleId}`);
-                let val = select ? select.value : 'OK';
-
-                if(val === 'OK') okCount++;
-                else issueCount++;
-            });
-
-            document.getElementById('calcIssues').innerText = `${issueCount} Pcs`;
-            document.getElementById('calcNetDelivered').innerText = `${okCount} Pcs`;
-        }
-
-        function confirmIndividualDelivery() {
-            if(!activeShipment) return;
-
-            let inputOtp = document.getElementById('deliveryOtpInput').value.trim();
-            if(inputOtp !== activeShipment.otp) {
-                alert("❌ अयोग्य OTP! कृपया Dealer कडून अचूक 4-Digit OTP घ्या.");
-                return;
-            }
-
-            let received = [];
-            let damaged = [];
-            let missing = [];
-
-            activeShipment.dispatchedBundles.forEach(bundleId => {
-                let val = document.getElementById(`status_${bundleId}`).value;
-                if(val === 'OK') received.push(bundleId);
-                else if(val === 'DAMAGED') damaged.push(bundleId);
-                else if(val === 'MISSING') missing.push(bundleId);
-            });
-
-            activeShipment.receivedBundles = received;
-            activeShipment.damagedBundles = damaged;
-            activeShipment.missingBundles = missing;
-            activeShipment.status = 'DELIVERED';
-            activeShipment.deliveredDateTime = getCurrentFormattedDateTime();
-
-            syncToCloud("UPDATE", activeShipment);
-
-            closeDeliveryModal();
-            alert("✅ Delivery Successfully Verified & Updated!");
-        }
-
-        function resendWhatsAppOtp() {
-            if(activeShipment) triggerWhatsAppMessage(activeShipment);
-        }
-
-        function toggleCameraScanner() {
-            if(isCameraActive) {
-                stopCameraScanner();
-            } else {
-                startCameraScanner();
-            }
-        }
-
-        function startCameraScanner() {
-            document.getElementById('cameraScannerBox').classList.remove('hidden');
-            document.getElementById('toggleCamBtn').innerText = "✕ Close Camera";
-
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                (decodedText) => {
-                    let code = decodedText.trim().toUpperCase();
-                    let select = document.getElementById(`status_${code}`);
-                    if(select) {
-                        select.value = "DAMAGED";
-                        updateModalCalculations();
-                        try { beepAudio.play(); } catch(err){}
-                        alert(`💔 Bundle ${code} Marked as DAMAGED!`);
-                    } else {
-                        alert(`⚠️ Bundle ${code} या Shipment मध्ये उपलब्ध नाही!`);
-                    }
-                },
-                (errorMessage) => {}
-            ).catch(err => {
-                console.error("Camera Error:", err);
-                alert("📷 Camera Open करण्यात अडचण येत आहे. Device Permission तपासा.");
-            });
-
-            isCameraActive = true;
-        }
-
-        function stopCameraScanner() {
-            if(html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    document.getElementById('cameraScannerBox').classList.add('hidden');
-                    document.getElementById('toggleCamBtn').innerText = "📷 Open Mobile Camera";
-                    isCameraActive = false;
-                }).catch(err => console.error("Camera Stop Error:", err));
-            }
+            syncToCloud('UPDATE', shipment);
+            alert(`✅ ${qty} Pcs return stock verified and added back to ${cat} Store Stock!`);
         }
 
         function exportExcel() {
-            if(shipments.length === 0) {
-                alert("निर्यात करण्यासाठी कोणताच डेटा नाही!");
-                return;
-            }
-
-            let exportData = shipments.map(s => ({
+            let data = shipments.map(s => ({
                 "Dispatch Date": s.dispatchDateTime,
-                "Product": s.product,
                 "Dealer Name": s.dealerName,
-                "Dealer Phone": s.dealerPhone,
-                "Driver Name": s.driverName,
+                "Phone": s.dealerPhone,
+                "Product": s.product,
+                "Driver": s.driverName,
                 "Vehicle No": s.vehicleNo,
                 "Dispatched Qty": s.dispatchedBundles ? s.dispatchedBundles.length : 0,
-                "Net Delivered OK": s.receivedBundles ? s.receivedBundles.length : 0,
+                "Delivered Qty": s.receivedBundles ? s.receivedBundles.length : 0,
                 "Damaged Qty": s.damagedBundles ? s.damagedBundles.length : 0,
                 "Missing Qty": s.missingBundles ? s.missingBundles.length : 0,
-                "Status": s.status,
-                "Delivery Date": s.deliveredDateTime
+                "Status": s.status
             }));
 
-            let ws = XLSX.utils.json_to_sheet(exportData);
+            let ws = XLSX.utils.json_to_sheet(data);
             let wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Dispatch Ledger");
-            XLSX.writeFile(wb, `Ekvira_ERP_Dispatch_Report_${Date.now()}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, "Shipments");
+            XLSX.writeFile(wb, "Shri_Ekvira_ERP_Report.xlsx");
         }
     </script>
 </body>
