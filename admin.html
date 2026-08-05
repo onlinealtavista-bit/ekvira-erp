@@ -17,7 +17,7 @@
         <div class="bg-blue-900 text-white rounded-xl shadow-md p-4 flex justify-between items-center flex-wrap gap-2">
             <div>
                 <h2 class="text-xl sm:text-2xl font-bold">SHRI EKVIRA MFG COATS PVT. LTD.</h2>
-                <p class="text-xs text-blue-200" id="headerSubtitle">Smart Preset & Barcode Delivery ERP</p>
+                <p class="text-xs text-blue-200" id="headerSubtitle">Smart Flexible ERP & Barcode Delivery System</p>
             </div>
             <div class="flex items-center gap-2 flex-wrap" id="roleSelectorBox">
                 <span id="syncStatus" class="text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse">☁️ Connecting...</span>
@@ -78,17 +78,17 @@
         <div id="storeInwardCard" class="admin-only store-visible grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-indigo-900 text-white rounded-xl shadow p-4 border border-indigo-800 md:col-span-2 space-y-3">
                 <div class="flex justify-between items-center border-b border-indigo-700 pb-2">
-                    <h3 class="text-md font-bold flex items-center gap-2">🏭 Production Stock Entry & Smart Pre-fill</h3>
-                    <span class="text-[10px] bg-indigo-700 text-amber-300 font-semibold px-2 py-0.5 rounded">💡 Smart Defaults Active</span>
+                    <h3 class="text-md font-bold flex items-center gap-2">🏭 Production Stock Entry & Custom Sizes</h3>
+                    <span class="text-[10px] bg-emerald-600 text-white font-semibold px-2 py-0.5 rounded">✏️ Custom Size & Mtr Supported</span>
                 </div>
                 
-                <!-- PRODUCTION FORM WITH CLIENT PRESET -->
+                <!-- PRODUCTION FORM -->
                 <form id="mfgInwardForm" class="space-y-3 text-xs">
-                    <!-- PRESET SELECTOR (SMART IDEA 2) -->
+                    <!-- PRESET SELECTOR -->
                     <div class="bg-indigo-950 p-2.5 rounded border border-indigo-700">
                         <label class="block font-bold text-amber-300 mb-1">⚡ Client / Order Preset Auto-Fill (क्लायंट ऑर्डर निवडा):</label>
                         <select id="orderPresetSelect" onchange="applyOrderPreset(this.value)" class="w-full border rounded p-1.5 text-black font-bold bg-amber-50 focus:ring-2 focus:ring-amber-400">
-                            <option value="CUSTOM">-- Manual Selection / Regular Factory Run --</option>
+                            <option value="CUSTOM">-- Manual / Regular Selection --</option>
                             <option value="RADHE_KRISHNA">Radhe Krishna Agro → Hydrogoal Inline | 16mm | 400 Mtr | ECO</option>
                             <option value="SAMARTH_AGRO">Samarth Agro → Rain Pipe | 32mm (1.25") | 100 Mtr | HEAVY</option>
                             <option value="KISAN_TRADERS">Kisan Traders → Flat Inline | 20mm | 300 Mtr | STANDARD</option>
@@ -106,9 +106,11 @@
                                 <option value="Submain Pipe">Submain Pipe (Patta Pipe)</option>
                             </select>
                         </div>
+
+                        <!-- PIPE SIZE WITH CUSTOM OPTION -->
                         <div>
                             <label class="block font-medium text-indigo-200">Pipe Size (MM / Inch)</label>
-                            <select id="mfgPipeSize" class="w-full border rounded p-2 mt-1 text-black font-semibold">
+                            <select id="mfgPipeSize" onchange="toggleCustomSize(this.value)" class="w-full border rounded p-2 mt-1 text-black font-semibold">
                                 <option value="12mm">12 MM</option>
                                 <option value="16mm" selected>16 MM (Default)</option>
                                 <option value="20mm">20 MM</option>
@@ -118,17 +120,29 @@
                                 <option value="50mm">50 MM (2 Inch)</option>
                                 <option value="63mm">63 MM (2.5 Inch)</option>
                                 <option value="75mm">75 MM (3 Inch)</option>
+                                <option value="90mm">90 MM</option>
+                                <option value="110mm">110 MM</option>
+                                <option value="CUSTOM_SIZE">✏️ Enter Custom Size...</option>
                             </select>
+                            <!-- Custom Size Text Box -->
+                            <input type="text" id="customSizeInput" placeholder="Enter Size (e.g. 125mm)" class="hidden w-full border rounded p-1.5 mt-1 text-black font-bold bg-amber-100">
                         </div>
+
+                        <!-- BUNDLE LENGTH WITH 900M, 1000M & CUSTOM OPTION -->
                         <div>
                             <label class="block font-medium text-indigo-200">Bundle Length (Meters)</label>
-                            <select id="mfgBundleLength" class="w-full border rounded p-2 mt-1 text-black font-semibold">
+                            <select id="mfgBundleLength" onchange="toggleCustomLength(this.value)" class="w-full border rounded p-2 mt-1 text-black font-semibold">
                                 <option value="100 Mtr">100 Meters</option>
                                 <option value="200 Mtr">200 Meters</option>
                                 <option value="300 Mtr">300 Meters</option>
                                 <option value="400 Mtr" selected>400 Meters (Default)</option>
                                 <option value="500 Mtr">500 Meters</option>
+                                <option value="900 Mtr">900 Meters</option>
+                                <option value="1000 Mtr">1000 Meters</option>
+                                <option value="CUSTOM_LEN">✏️ Custom Requirement (Mtr)...</option>
                             </select>
+                            <!-- Custom Length Input Box -->
+                            <input type="number" id="customLengthInput" placeholder="Enter Meters (e.g. 750)" class="hidden w-full border rounded p-1.5 mt-1 text-black font-bold bg-amber-100">
                         </div>
                     </div>
 
@@ -301,34 +315,6 @@
         let shipments = JSON.parse(localStorage.getItem('ekvira_shipments')) || [];
         let currentScannedBundles = [];
 
-        // PRESET ORDER MAPPING LOGIC (SMART IDEA 2)
-        const orderPresets = {
-            "RADHE_KRISHNA": {
-                category: "Hydrogoal Inline Pipe",
-                pipeSize: "16mm",
-                bundleLength: "400 Mtr",
-                grade: "ECO"
-            },
-            "SAMARTH_AGRO": {
-                category: "Rain Pipe",
-                pipeSize: "32mm",
-                bundleLength: "100 Mtr",
-                grade: "HEAVY"
-            },
-            "KISAN_TRADERS": {
-                category: "Flat Inline Pipe",
-                pipeSize: "20mm",
-                bundleLength: "300 Mtr",
-                grade: "STANDARD"
-            },
-            "MAHALAXMI_AGRO": {
-                category: "Submain Pipe",
-                pipeSize: "63mm",
-                bundleLength: "100 Mtr",
-                grade: "HEAVY"
-            }
-        };
-
         window.onload = function() {
             generateAutoBatchNo();
             fetchCloudShipments();
@@ -337,22 +323,25 @@
             updateStats();
         };
 
-        // AUTO-FILL FUNCTION ON PRESET SELECT
-        function applyOrderPreset(presetKey) {
-            if (presetKey === "CUSTOM" || !orderPresets[presetKey]) {
-                // Reset to Defaults
-                document.getElementById('mfgCategory').value = "Hydrogoal Inline Pipe";
-                document.getElementById('mfgPipeSize').value = "16mm";
-                document.getElementById('mfgBundleLength').value = "400 Mtr";
-                document.getElementById('mfgPipeGrade').value = "STANDARD";
-                return;
+        // CUSTOM SIZE & LENGTH TOGGLE HANDLERS
+        function toggleCustomSize(val) {
+            let input = document.getElementById('customSizeInput');
+            if (val === 'CUSTOM_SIZE') {
+                input.classList.remove('hidden');
+                input.focus();
+            } else {
+                input.classList.add('hidden');
             }
+        }
 
-            const preset = orderPresets[presetKey];
-            document.getElementById('mfgCategory').value = preset.category;
-            document.getElementById('mfgPipeSize').value = preset.pipeSize;
-            document.getElementById('mfgBundleLength').value = preset.bundleLength;
-            document.getElementById('mfgPipeGrade').value = preset.grade;
+        function toggleCustomLength(val) {
+            let input = document.getElementById('customLengthInput');
+            if (val === 'CUSTOM_LEN') {
+                input.classList.remove('hidden');
+                input.focus();
+            } else {
+                input.classList.add('hidden');
+            }
         }
 
         function generateAutoBatchNo() {
@@ -582,12 +571,25 @@
         document.getElementById('mfgInwardForm').addEventListener('submit', function(e){
             e.preventDefault();
             let cat = document.getElementById('mfgCategory').value;
-            let pipeSize = document.getElementById('mfgPipeSize').value;
-            let bundleLength = document.getElementById('mfgBundleLength').value;
+            
+            // PIPE SIZE LOGIC
+            let pipeSizeSelect = document.getElementById('mfgPipeSize').value;
+            let pipeSize = pipeSizeSelect === 'CUSTOM_SIZE' 
+                ? document.getElementById('customSizeInput').value.trim() 
+                : pipeSizeSelect;
+
+            // BUNDLE LENGTH LOGIC
+            let bundleLengthSelect = document.getElementById('mfgBundleLength').value;
+            let bundleLength = bundleLengthSelect === 'CUSTOM_LEN' 
+                ? document.getElementById('customLengthInput').value.trim() + " Mtr" 
+                : bundleLengthSelect;
+
             let pipeGrade = document.getElementById('mfgPipeGrade').value;
             let batchHeader = document.getElementById('mfgBatchNo').value.trim();
             let qty = parseInt(document.getElementById('mfgQty').value) || 0;
 
+            if (!pipeSize) { alert("❌ कृपया साईझ सिलेक्ट किंवा एंटर करा!"); return; }
+            if (!bundleLength) { alert("❌ कृपया बंडल लेंथ सिलेक्ट किंवा एंटर करा!"); return; }
             if(qty <= 0) return;
 
             let manufacturedAt = getCurrentFormattedDateTime();
@@ -619,10 +621,12 @@
             updateStats();
             syncToCloud('ADD_BATCH', null, null);
 
-            alert(`✅ Batch Created Successfully!\nSpecs: ${cat} | ${pipeSize} | ${bundleLength} | Grade: ${pipeGrade}`);
+            alert(`✅ Batch Created Successfully!\nSpecs: ${cat} | Size: ${pipeSize} | Length: ${bundleLength} | Grade: ${pipeGrade}`);
             
             document.getElementById('mfgQty').value = "";
             document.getElementById('orderPresetSelect').value = "CUSTOM";
+            document.getElementById('customSizeInput').classList.add('hidden');
+            document.getElementById('customLengthInput').classList.add('hidden');
             generateAutoBatchNo();
         });
 
