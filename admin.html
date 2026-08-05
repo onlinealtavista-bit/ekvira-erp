@@ -17,7 +17,7 @@
         <div class="bg-blue-900 text-white rounded-xl shadow-md p-4 flex justify-between items-center flex-wrap gap-2">
             <div>
                 <h2 class="text-xl sm:text-2xl font-bold">SHRI EKVIRA MFG COATS PVT. LTD.</h2>
-                <p class="text-xs text-blue-200" id="headerSubtitle">Mobile Camera Audit & Net Delivery ERP</p>
+                <p class="text-xs text-blue-200" id="headerSubtitle">Smart Preset & Barcode Delivery ERP</p>
             </div>
             <div class="flex items-center gap-2 flex-wrap" id="roleSelectorBox">
                 <span id="syncStatus" class="text-[10px] bg-amber-500 text-white font-bold px-2 py-1 rounded animate-pulse">☁️ Connecting...</span>
@@ -78,11 +78,24 @@
         <div id="storeInwardCard" class="admin-only store-visible grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-indigo-900 text-white rounded-xl shadow p-4 border border-indigo-800 md:col-span-2 space-y-3">
                 <div class="flex justify-between items-center border-b border-indigo-700 pb-2">
-                    <h3 class="text-md font-bold flex items-center gap-2">🏭 Production Stock Entry & Barcode Generator</h3>
+                    <h3 class="text-md font-bold flex items-center gap-2">🏭 Production Stock Entry & Smart Pre-fill</h3>
+                    <span class="text-[10px] bg-indigo-700 text-amber-300 font-semibold px-2 py-0.5 rounded">💡 Smart Defaults Active</span>
                 </div>
                 
-                <!-- PRODUCTION FORM WITH PIPE SPECS -->
+                <!-- PRODUCTION FORM WITH CLIENT PRESET -->
                 <form id="mfgInwardForm" class="space-y-3 text-xs">
+                    <!-- PRESET SELECTOR (SMART IDEA 2) -->
+                    <div class="bg-indigo-950 p-2.5 rounded border border-indigo-700">
+                        <label class="block font-bold text-amber-300 mb-1">⚡ Client / Order Preset Auto-Fill (क्लायंट ऑर्डर निवडा):</label>
+                        <select id="orderPresetSelect" onchange="applyOrderPreset(this.value)" class="w-full border rounded p-1.5 text-black font-bold bg-amber-50 focus:ring-2 focus:ring-amber-400">
+                            <option value="CUSTOM">-- Manual Selection / Regular Factory Run --</option>
+                            <option value="RADHE_KRISHNA">Radhe Krishna Agro → Hydrogoal Inline | 16mm | 400 Mtr | ECO</option>
+                            <option value="SAMARTH_AGRO">Samarth Agro → Rain Pipe | 32mm (1.25") | 100 Mtr | HEAVY</option>
+                            <option value="KISAN_TRADERS">Kisan Traders → Flat Inline | 20mm | 300 Mtr | STANDARD</option>
+                            <option value="MAHALAXMI_AGRO">Mahalaxmi Agro → Submain Pipe | 63mm (2.5") | 100 Mtr | HEAVY</option>
+                        </select>
+                    </div>
+
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                             <label class="block font-medium text-indigo-200">Product Category</label>
@@ -97,7 +110,7 @@
                             <label class="block font-medium text-indigo-200">Pipe Size (MM / Inch)</label>
                             <select id="mfgPipeSize" class="w-full border rounded p-2 mt-1 text-black font-semibold">
                                 <option value="12mm">12 MM</option>
-                                <option value="16mm" selected>16 MM</option>
+                                <option value="16mm" selected>16 MM (Default)</option>
                                 <option value="20mm">20 MM</option>
                                 <option value="25mm">25 MM (1 Inch)</option>
                                 <option value="32mm">32 MM (1.25 Inch)</option>
@@ -113,7 +126,7 @@
                                 <option value="100 Mtr">100 Meters</option>
                                 <option value="200 Mtr">200 Meters</option>
                                 <option value="300 Mtr">300 Meters</option>
-                                <option value="400 Mtr" selected>400 Meters</option>
+                                <option value="400 Mtr" selected>400 Meters (Default)</option>
                                 <option value="500 Mtr">500 Meters</option>
                             </select>
                         </div>
@@ -123,7 +136,7 @@
                         <div>
                             <label class="block font-medium text-indigo-200">Quality Grade</label>
                             <select id="mfgPipeGrade" class="w-full border rounded p-2 mt-1 text-black font-semibold">
-                                <option value="STANDARD">STANDARD</option>
+                                <option value="STANDARD" selected>STANDARD (Default)</option>
                                 <option value="ECO">ECO / Economy</option>
                                 <option value="HEAVY">HEAVY DUTY</option>
                             </select>
@@ -285,14 +298,62 @@
         };
 
         let batchHistory = JSON.parse(localStorage.getItem('ekvira_batch_history')) || [];
-        let shipments = [];
+        let shipments = JSON.parse(localStorage.getItem('ekvira_shipments')) || [];
         let currentScannedBundles = [];
+
+        // PRESET ORDER MAPPING LOGIC (SMART IDEA 2)
+        const orderPresets = {
+            "RADHE_KRISHNA": {
+                category: "Hydrogoal Inline Pipe",
+                pipeSize: "16mm",
+                bundleLength: "400 Mtr",
+                grade: "ECO"
+            },
+            "SAMARTH_AGRO": {
+                category: "Rain Pipe",
+                pipeSize: "32mm",
+                bundleLength: "100 Mtr",
+                grade: "HEAVY"
+            },
+            "KISAN_TRADERS": {
+                category: "Flat Inline Pipe",
+                pipeSize: "20mm",
+                bundleLength: "300 Mtr",
+                grade: "STANDARD"
+            },
+            "MAHALAXMI_AGRO": {
+                category: "Submain Pipe",
+                pipeSize: "63mm",
+                bundleLength: "100 Mtr",
+                grade: "HEAVY"
+            }
+        };
 
         window.onload = function() {
             generateAutoBatchNo();
             fetchCloudShipments();
             renderInwardHistory();
+            renderShipmentTable();
+            updateStats();
         };
+
+        // AUTO-FILL FUNCTION ON PRESET SELECT
+        function applyOrderPreset(presetKey) {
+            if (presetKey === "CUSTOM" || !orderPresets[presetKey]) {
+                // Reset to Defaults
+                document.getElementById('mfgCategory').value = "Hydrogoal Inline Pipe";
+                document.getElementById('mfgPipeSize').value = "16mm";
+                document.getElementById('mfgBundleLength').value = "400 Mtr";
+                document.getElementById('mfgPipeGrade').value = "STANDARD";
+                return;
+            }
+
+            const preset = orderPresets[presetKey];
+            document.getElementById('mfgCategory').value = preset.category;
+            document.getElementById('mfgPipeSize').value = preset.pipeSize;
+            document.getElementById('mfgBundleLength').value = preset.bundleLength;
+            document.getElementById('mfgPipeGrade').value = preset.grade;
+        }
 
         function generateAutoBatchNo() {
             const now = new Date();
@@ -308,7 +369,216 @@
             return `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`;
         }
 
-        // INWARD FORM SUBMIT HANDLER WITH NEW FIELDS
+        // BARCODE SCANNING
+        function handleGunScan(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                let barcode = event.target.value.trim().toUpperCase();
+                if (!barcode) return;
+
+                if (currentScannedBundles.includes(barcode)) {
+                    alert("⚠️ हा बंडल आधीच स्कॅन केला आहे!");
+                } else {
+                    currentScannedBundles.push(barcode);
+                    renderScannedTags();
+                }
+                event.target.value = "";
+            }
+        }
+
+        function renderScannedTags() {
+            let container = document.getElementById('scannedBundleTags');
+            let countSpan = document.getElementById('scanCount');
+            container.innerHTML = "";
+            
+            currentScannedBundles.forEach((code, index) => {
+                container.innerHTML += `
+                    <span class="inline-flex items-center gap-1 bg-amber-200 text-amber-900 border border-amber-400 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded">
+                        ${code}
+                        <button onclick="removeScannedBundle(${index})" class="text-red-600 hover:text-red-800 font-bold ml-1">×</button>
+                    </span>
+                `;
+            });
+            countSpan.innerText = `${currentScannedBundles.length} Bundles`;
+        }
+
+        function removeScannedBundle(index) {
+            currentScannedBundles.splice(index, 1);
+            renderScannedTags();
+        }
+
+        // DISPATCH & SEND WHATSAPP OTP
+        function dispatchShipment() {
+            let cat = document.getElementById('prodCategory').value;
+            let dealer = document.getElementById('dealerName').value.trim();
+            let phone = document.getElementById('dealerPhone').value.trim();
+            let driver = document.getElementById('driverName').value.trim();
+            let vehicle = document.getElementById('vehicleNo').value.trim();
+
+            if (!dealer || !phone || !driver || !vehicle) {
+                alert("❌ कृपया डीलर, मोबाईल नंबर, ड्रायव्हर आणि गाडीची माहिती पूर्ण भरा.");
+                return;
+            }
+
+            if (currentScannedBundles.length === 0) {
+                alert("❌ डिस्पॅच करण्यासाठी किमान १ बंडल बारकोड स्कॅन करा!");
+                return;
+            }
+
+            let dispatchedQty = currentScannedBundles.length;
+            let otp = Math.floor(100000 + Math.random() * 900000);
+
+            let newShipment = {
+                id: 'SHIP-' + Date.now(),
+                dispatchDate: getCurrentFormattedDateTime(),
+                product: cat,
+                dealerName: dealer,
+                dealerPhone: phone,
+                driverName: driver,
+                vehicleNo: vehicle,
+                dispatchedQty: dispatchedQty,
+                scannedBundles: [...currentScannedBundles],
+                deliveredQty: 0,
+                damagedQty: 0,
+                missingQty: 0,
+                status: 'IN-TRANSIT',
+                otp: otp
+            };
+
+            shipments.unshift(newShipment);
+            localStorage.setItem('ekvira_shipments', JSON.stringify(shipments));
+
+            productStock[cat] = Math.max(0, (productStock[cat] || 0) - dispatchedQty);
+            localStorage.setItem('ekvira_stock', JSON.stringify(productStock));
+
+            syncToCloud('DISPATCH', newShipment, newShipment.id);
+
+            let waMsg = `*SHRI EKVIRA MFG - DISPATCH OTP ALERT*%0A%0ADear *${dealer}*,%0AYour shipment of *${dispatchedQty} Bundles* (${cat}) has been dispatched via Vehicle No: *${vehicle}* (Driver: ${driver}).%0A%0A🔑 Your Delivery OTP is: *${otp}*%0A%0APlease share this OTP with driver only after inspecting materials at delivery.`;
+            
+            let waUrl = `https://wa.me/91${phone}?text=${waMsg}`;
+            window.open(waUrl, '_blank');
+
+            currentScannedBundles = [];
+            renderScannedTags();
+            document.getElementById('dealerName').value = "";
+            document.getElementById('dealerPhone').value = "";
+            
+            renderShipmentTable();
+            updateStats();
+        }
+
+        // COMPLETE DELIVERY & AUTO CALCULATION
+        function completeDelivery(shipmentId) {
+            let ship = shipments.find(s => s.id === shipmentId);
+            if (!ship) return;
+
+            let userOTP = prompt(`🔒 डीलर मोबाईल नंबरवर ( ${ship.dealerPhone} ) आलेला 6-अंकी OTP टाका:`);
+            if (userOTP != ship.otp) {
+                alert("❌ चुकीचा OTP! डिलिव्हरी कन्फर्मेशन रद्द झाले आहे.");
+                return;
+            }
+
+            let damaged = parseInt(prompt("⚠️ खराब (Damaged) बंडल संख्या टाका (नसल्यास 0 टाका):", "0")) || 0;
+            let missing = parseInt(prompt("🚨 गहाळ/चोरी (Missing) बंडल संख्या टाका (नसल्यास 0 टाका):", "0")) || 0;
+
+            let netDelivered = ship.dispatchedQty - (damaged + missing);
+
+            if (netDelivered < 0) {
+                alert("❌ चुकीची माहिती! खराब आणि गहाळ बंडलची संख्या एकूण डिस्पॅचपेक्षा जास्त असू शकत नाही.");
+                return;
+            }
+
+            ship.damagedQty = damaged;
+            ship.missingQty = missing;
+            ship.deliveredQty = netDelivered;
+            ship.status = 'DELIVERED';
+            ship.deliveredDate = getCurrentFormattedDateTime();
+
+            localStorage.setItem('ekvira_shipments', JSON.stringify(shipments));
+            syncToCloud('UPDATE_DELIVERY', ship, ship.id);
+
+            alert(`✅ डिलिव्हरी यशस्वीरीत्या पूर्ण झाली!\n\nएकूण डिस्पॅच: ${ship.dispatchedQty}\nNet Delivered OK: ${netDelivered}\nDamaged: ${damaged}\nMissing: ${missing}`);
+
+            renderShipmentTable();
+            updateStats();
+        }
+
+        function renderShipmentTable() {
+            let body = document.getElementById('dispatchTableBody');
+            if (!body) return;
+
+            if (shipments.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">नो नोंदी आढळल्या नाहीत.</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = "";
+            shipments.forEach(s => {
+                let statusBadge = s.status === 'IN-TRANSIT' 
+                    ? `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-300">🚛 IN-TRANSIT</span>`
+                    : `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-300">✅ DELIVERED</span>`;
+
+                let actionBtn = s.status === 'IN-TRANSIT'
+                    ? `<button onclick="completeDelivery('${s.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] px-2 py-1 rounded shadow">🔐 Enter OTP & Verify</button>`
+                    : `<span class="text-[10px] text-gray-500 font-semibold">Verified OK</span>`;
+
+                body.innerHTML += `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-2 border">
+                            <div class="font-bold text-blue-950">${s.dealerName}</div>
+                            <div class="text-[10px] text-gray-500">${s.dispatchDate} | 📞 ${s.dealerPhone}</div>
+                            <div class="text-[10px] font-semibold text-slate-700">🚚 ${s.vehicleNo} (${s.driverName})</div>
+                        </td>
+                        <td class="p-2 border text-center font-bold text-gray-800">${s.dispatchedQty} Pcs<br><span class="text-[9px] text-blue-600 font-normal">${s.product}</span></td>
+                        <td class="p-2 border text-center font-bold text-emerald-600">${s.deliveredQty} Pcs</td>
+                        <td class="p-2 border text-center">
+                            <span class="text-orange-600 font-bold">${s.damagedQty} Dmg</span> / 
+                            <span class="text-red-600 font-bold">${s.missingQty} Mis</span>
+                        </td>
+                        <td class="p-2 border text-center space-y-1">
+                            <div>${statusBadge}</div>
+                            <div>${actionBtn}</div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function updateStats() {
+            let filter = document.getElementById('globalProductFilter').value;
+            let filteredShipments = filter === 'ALL' ? shipments : shipments.filter(s => s.product === filter);
+
+            let storeStock = filter === 'ALL' 
+                ? Object.values(productStock).reduce((a, b) => a + b, 0)
+                : (productStock[filter] || 0);
+
+            let dispatched = filteredShipments.reduce((acc, s) => acc + s.dispatchedQty, 0);
+            let inTransit = filteredShipments.filter(s => s.status === 'IN-TRANSIT').reduce((acc, s) => acc + s.dispatchedQty, 0);
+            let delivered = filteredShipments.reduce((acc, s) => acc + s.deliveredQty, 0);
+            let damaged = filteredShipments.reduce((acc, s) => acc + s.damagedQty, 0);
+            let missing = filteredShipments.reduce((acc, s) => acc + s.missingQty, 0);
+
+            document.getElementById('statStoreStock').innerText = `${storeStock} Pcs`;
+            document.getElementById('statDispatched').innerText = `${dispatched} Pcs`;
+            document.getElementById('statTransit').innerText = `${inTransit} Pcs`;
+            document.getElementById('statDelivered').innerText = `${delivered} Pcs`;
+            document.getElementById('statDamaged').innerText = `${damaged} Pcs`;
+            document.getElementById('statMissing').innerText = `${missing} Pcs`;
+        }
+
+        function applyStockEdit() {
+            let cat = document.getElementById('editStockCategory').value;
+            let qty = parseInt(document.getElementById('editStockQty').value);
+            if (isNaN(qty) || qty < 0) return;
+
+            productStock[cat] = qty;
+            localStorage.setItem('ekvira_stock', JSON.stringify(productStock));
+            updateStats();
+            alert(`✅ ${cat} स्टॉक यशस्वीपणे अपडेट झाला: ${qty} Pcs`);
+            document.getElementById('editStockQty').value = "";
+        }
+
+        // INWARD FORM SUBMIT HANDLER
         document.getElementById('mfgInwardForm').addEventListener('submit', function(e){
             e.preventDefault();
             let cat = document.getElementById('mfgCategory').value;
@@ -346,11 +616,13 @@
             localStorage.setItem('ekvira_stock', JSON.stringify(productStock));
 
             renderInwardHistory();
+            updateStats();
             syncToCloud('ADD_BATCH', null, null);
 
             alert(`✅ Batch Created Successfully!\nSpecs: ${cat} | ${pipeSize} | ${bundleLength} | Grade: ${pipeGrade}`);
             
             document.getElementById('mfgQty').value = "";
+            document.getElementById('orderPresetSelect').value = "CUSTOM";
             generateAutoBatchNo();
         });
 
@@ -386,7 +658,7 @@
             });
         }
 
-        // PRINT TSC STICKER LABELS WITH ECO/STANDARD & SIZE DETAILS
+        // PRINT TSC STICKER LABELS
         function printTSCPrintWindow(batchNo) {
             let batch = batchHistory.find(b => b.batchNo === batchNo);
             if(!batch) return;
@@ -473,6 +745,12 @@
             printWin.document.close();
         }
 
+        // EXPORT EXCEL
+        function exportExcel() {
+            let wb = XLSX.utils.table_to_book(document.getElementById('recordsTable'), { sheet: "Dispatches" });
+            XLSX.writeFile(wb, `Ekvira_Dispatch_Ledger_${Date.now()}.xlsx`);
+        }
+
         // CLOUD SYNC & UTILS
         function fetchCloudShipments() {
             fetch(GOOGLE_SCRIPT_URL)
@@ -482,6 +760,12 @@
                         batchHistory = data.batchHistory;
                         localStorage.setItem('ekvira_batch_history', JSON.stringify(batchHistory));
                         renderInwardHistory();
+                    }
+                    if(data.shipments && Array.isArray(data.shipments)) {
+                        shipments = data.shipments;
+                        localStorage.setItem('ekvira_shipments', JSON.stringify(shipments));
+                        renderShipmentTable();
+                        updateStats();
                     }
                     document.getElementById('syncStatus').innerText = "✅ Cloud Connected";
                     document.getElementById('syncStatus').className = "text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded";
