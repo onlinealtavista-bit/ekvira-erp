@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body class="bg-slate-100 p-2 sm:p-6 font-sans">
 
@@ -111,12 +112,12 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block font-medium text-indigo-200">Batch Series Header</label>
-                        <input type="text" id="mfgBatchNo" class="w-full border rounded p-2 mt-1 text-black font-mono font-bold uppercase" placeholder="e.g. BATCH-RAIN-2026" required>
+                        <label class="block font-medium text-indigo-200">Auto Batch No</label>
+                        <input type="text" id="mfgBatchNo" class="w-full border rounded p-2 mt-1 text-black font-mono font-bold bg-gray-200 cursor-not-allowed" readonly>
                     </div>
                     <div>
                         <label class="block font-medium text-indigo-200">Quantity (Bundles)</label>
-                        <input type="number" id="mfgQty" min="1" class="w-full border rounded p-2 mt-1 text-black font-bold" placeholder="e.g. 500" required>
+                        <input type="number" id="mfgQty" min="1" class="w-full border rounded p-2 mt-1 text-black font-bold" placeholder="e.g. 50" required>
                     </div>
                     <div class="flex items-end gap-2">
                         <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded text-xs transition shadow">
@@ -227,7 +228,7 @@
                         <span id="scanCount" class="text-xs font-bold bg-blue-900 text-white px-2 py-0.5 rounded">0 Bundles</span>
                     </div>
 
-                    <input type="text" id="gunBarcodeInput" placeholder="🔫 Scan Bundle Barcode Here..." class="w-full border-2 border-amber-500 rounded p-2.5 text-sm font-mono font-bold uppercase bg-white focus:outline-none focus:ring-2 focus:ring-amber-600 shadow-inner">
+                    <input type="text" id="gunBarcodeInput" placeholder="🔫 Scan Bundle Barcode Here..." class="w-full border-2 border-amber-500 rounded p-2.5 text-sm font-mono font-bold uppercase bg-white focus:outline-none focus:ring-2 focus:ring-amber-600 shadow-inner" onkeydown="handleGunScan(event)">
 
                     <div class="border-t border-amber-200 pt-2 mt-2">
                         <span class="text-[10px] text-gray-500 font-bold block mb-1">Scanned Bundle IDs:</span>
@@ -333,15 +334,11 @@
         };
 
         let batchHistory = JSON.parse(localStorage.getItem('ekvira_batch_history')) || [];
-
         let shipments = [];
         let currentScannedBundles = [];
         let activeShipment = null;
         let html5QrCode = null;
-        let isCameraActive = false;
         let activeRole = 'FACTORY';
-
-        const beepAudio = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
 
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -352,10 +349,21 @@
                 document.getElementById('userRole').classList.add('hidden');
             }
             
+            generateAutoBatchNo();
             switchRole(document.getElementById('userRole').value);
             fetchCloudShipments();
             renderInwardHistory();
         };
+
+        function generateAutoBatchNo() {
+            const now = new Date();
+            const dateStr = now.getFullYear().toString() +
+                            String(now.getMonth() + 1).padStart(2, '0') +
+                            String(now.getDate()).padStart(2, '0');
+            const seq = String(batchHistory.length + 1).padStart(3, '0');
+            const autoBatch = `BATCH-${dateStr}-${seq}`;
+            document.getElementById('mfgBatchNo').value = autoBatch;
+        }
 
         function switchRole(role) {
             activeRole = role;
@@ -432,16 +440,6 @@
                 fetchCloudShipments();
             })
             .catch(err => console.error("Cloud Save Error:", err));
-        }
-
-        function deleteShipment(id) {
-            if(activeRole !== 'FACTORY') {
-                alert("⚠️ एंट्री डिलीट करण्याचा अधिकार फक्त Factory Admin ला आहे!");
-                return;
-            }
-            if(confirm("⚠️ ही चुकीची एंट्री खरोखर डिलीट करायची आहे का?")) {
-                syncToCloud("DELETE", null, id);
-            }
         }
 
         function applyStockEdit() {
@@ -524,21 +522,29 @@
             if(document.getElementById('statMissing')) document.getElementById('statMissing').innerText = totalMissing + " Pcs";
         }
 
-        // PRODUCTION INWARD SUBMIT WITH MANUFACTUREDAT & BATCHNO
+        // AUTO-GENERATED BATCH & INDIVIDUAL BUNDLE BARCODES SUBMIT
         document.getElementById('mfgInwardForm').addEventListener('submit', function(e){
             e.preventDefault();
             let cat = document.getElementById('mfgCategory').value;
-            let batchHeader = document.getElementById('mfgBatchNo').value.trim().toUpperCase();
+            let batchHeader = document.getElementById('mfgBatchNo').value.trim();
             let qty = parseInt(document.getElementById('mfgQty').value) || 0;
             if(qty <= 0) return;
 
             let manufacturedAt = getCurrentFormattedDateTime();
 
+            // Generate Individual Bundle Barcodes
+            let bundleBarcodes = [];
+            for (let i = 1; i <= qty; i++) {
+                let bundleSeq = String(i).padStart(3, '0');
+                bundleBarcodes.push(`${batchHeader}-B${bundleSeq}`);
+            }
+
             let batchRecord = {
                 batchNo: batchHeader,
                 manufacturedAt: manufacturedAt,
                 product: cat,
-                qty: qty
+                qty: qty,
+                bundles: bundleBarcodes
             };
 
             batchHistory.unshift(batchRecord);
@@ -551,30 +557,31 @@
 
             syncToCloud('ADD_BATCH', null, null);
 
-            alert(`✅ Production Batch Added!\nBatch No: ${batchHeader}\nManufactured At: ${manufacturedAt}\nProduct: ${cat}\nQty: ${qty} Bundles`);
-            document.getElementById('mfgInwardForm').reset();
+            alert(`✅ Batch Created Successfully!\nBatch No: ${batchHeader}\nTotal Bundles: ${qty}\nIndividual Bundle Barcodes Generated!`);
+            
+            document.getElementById('mfgQty').value = "";
+            generateAutoBatchNo();
         });
 
         function renderInwardHistory() {
             let body = document.getElementById('inwardHistoryBody');
             if(!body) return;
-
             if(batchHistory.length === 0) {
                 body.innerHTML = `<tr><td colspan="5" class="p-2 text-center text-indigo-300">No batch records yet.</td></tr>`;
                 return;
             }
 
             body.innerHTML = "";
-            batchHistory.slice(0, 5).forEach((b) => {
+            batchHistory.forEach(b => {
                 body.innerHTML += `
-                    <tr class="border-b border-indigo-800 hover:bg-indigo-900/50">
+                    <tr class="border-b border-indigo-800 hover:bg-indigo-900">
                         <td class="p-1.5 font-mono font-bold text-amber-300">${b.batchNo}</td>
-                        <td class="p-1.5 text-[10px] text-gray-300">${b.manufacturedAt}</td>
-                        <td class="p-1.5 text-gray-200">${b.product}</td>
+                        <td class="p-1.5 text-gray-300">${b.manufacturedAt}</td>
+                        <td class="p-1.5 text-white">${b.product}</td>
                         <td class="p-1.5 text-center font-bold text-emerald-400">${b.qty} Pcs</td>
                         <td class="p-1.5 text-center">
-                            <button onclick="printTscLabel('${b.batchNo}', '${b.product}', '${b.manufacturedAt}')" class="bg-amber-500 hover:bg-amber-600 text-black px-2 py-0.5 rounded text-[10px] font-bold shadow">
-                                🖨️ Print Label
+                            <button onclick="printTSCPrintWindow('${b.batchNo}')" class="bg-amber-500 hover:bg-amber-600 text-black text-[10px] font-bold px-2 py-0.5 rounded shadow">
+                                🖨️ Print Labels
                             </button>
                         </td>
                     </tr>
@@ -582,167 +589,204 @@
             });
         }
 
-        // DIRECT TSC PRINTER DIRECT WEB PRINTING (TSPL COMMAND)
-        function printTscLabel(batchNo, product, mfgTime) {
-            let tsplCommand = 
-`SIZE 100 mm, 50 mm
-GAP 2 mm, 0 mm
-DIRECTION 1
-CLS
-TEXT 50,30,"3",0,1,1,"SHRI EKVIRA MFG COATS"
-TEXT 50,70,"2",0,1,1,"Product: ${product}"
-TEXT 50,105,"2",0,1,1,"Mfg Date/Time: ${mfgTime}"
-TEXT 50,140,"2",0,1,1,"Batch No: ${batchNo}"
-BARCODE 50,185,"128",80,1,0,2,2,"${batchNo}"
-PRINT 1,1
-`;
+        // PRINT TSC LABELS WINDOW FOR ALL BUNDLES IN BATCH
+        function printTSCPrintWindow(batchNo) {
+            let batch = batchHistory.find(b => b.batchNo === batchNo);
+            if(!batch) return;
 
-            let printWindow = window.open('', '', 'width=400,height=300');
-            printWindow.document.write('<pre>' + tsplCommand + '</pre>');
-            printWindow.document.close();
-            
-            setTimeout(() => {
-                printWindow.print();
-                printWindow.close();
-            }, 500);
+            let printWin = window.open('', '_blank');
+            let htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Print Labels - ${batch.batchNo}</title>
+                    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 0; padding: 10px; }
+                        .label-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+                        .label-box { 
+                            width: 50mm; 
+                            height: 35mm; 
+                            border: 1px dashed #333; 
+                            padding: 4px; 
+                            box-sizing: border-box; 
+                            text-align: center;
+                            page-break-inside: avoid;
+                        }
+                        .company { font-size: 8px; font-weight: bold; }
+                        .product { font-size: 9px; font-weight: bold; color: #111; margin: 2px 0; }
+                        .batch { font-size: 7px; color: #555; }
+                        svg { width: 90%; height: 18mm; }
+                    </style>
+                </head>
+                <body>
+                    <div class="label-grid">
+            `;
 
-            alert(`🖨️ Printing Label for Batch: ${batchNo}\nRaw TSPL barcode string generated.`);
+            batch.bundles.forEach(bCode => {
+                htmlContent += `
+                    <div class="label-box">
+                        <div class="company">SHRI EKVIRA MFG COATS</div>
+                        <div class="product">${batch.product}</div>
+                        <svg class="barcode" data-value="${bCode}"></svg>
+                        <div class="batch">MFG: ${batch.manufacturedAt}</div>
+                    </div>
+                `;
+            });
+
+            htmlContent += `
+                    </div>
+                    <script>
+                        document.querySelectorAll('.barcode').forEach(el => {
+                            JsBarcode(el, el.getAttribute('data-value'), {
+                                format: "CODE128",
+                                width: 1.5,
+                                height: 40,
+                                displayValue: true,
+                                fontSize: 10
+                            });
+                        });
+                        setTimeout(() => { window.print(); }, 800);
+                    <\/script>
+                </body>
+                </html>
+            `;
+
+            printWin.document.write(htmlContent);
+            printWin.document.close();
         }
 
-        const gunInput = document.getElementById('gunBarcodeInput');
-        if(gunInput) {
-            gunInput.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    let val = this.value.trim().toUpperCase();
-                    if (val !== "") {
-                        if (!currentScannedBundles.includes(val)) {
-                            currentScannedBundles.push(val);
-                            renderScannedTags();
-                            try { beepAudio.play(); } catch(err){}
-                        }
-                    }
-                    this.value = ""; 
+        function handleGunScan(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                let code = e.target.value.trim().toUpperCase();
+                if(code && !currentScannedBundles.includes(code)) {
+                    currentScannedBundles.push(code);
+                    renderScannedTags();
                 }
-            });
+                e.target.value = "";
+            }
         }
 
         function renderScannedTags() {
             let container = document.getElementById('scannedBundleTags');
+            let countSpan = document.getElementById('scanCount');
             if(!container) return;
+
             container.innerHTML = "";
-            currentScannedBundles.forEach((b, index) => {
+            currentScannedBundles.forEach((tag, idx) => {
                 container.innerHTML += `
-                    <span class="bg-blue-100 text-blue-900 text-[10px] font-mono font-bold px-2 py-1 rounded flex items-center gap-1">
-                        ${b} <button onclick="removeBundle(${index})" class="text-red-500 font-bold hover:text-red-700">✕</button>
-                    </span>`;
+                    <span class="bg-blue-800 text-white text-[10px] px-2 py-0.5 rounded flex items-center gap-1 font-mono">
+                        ${tag}
+                        <button onclick="removeScannedBundle(${idx})" class="text-red-300 font-bold hover:text-white">✕</button>
+                    </span>
+                `;
             });
-            document.getElementById('scanCount').innerText = `${currentScannedBundles.length} Bundles`;
+
+            if(countSpan) countSpan.innerText = `${currentScannedBundles.length} Bundles`;
         }
 
-        function removeBundle(index) {
+        function removeScannedBundle(index) {
             currentScannedBundles.splice(index, 1);
             renderScannedTags();
         }
 
         function dispatchShipment() {
-            let category = document.getElementById('prodCategory').value;
+            let cat = document.getElementById('prodCategory').value;
             let dealer = document.getElementById('dealerName').value.trim();
             let phone = document.getElementById('dealerPhone').value.trim();
             let driver = document.getElementById('driverName').value.trim();
-            let vehicle = document.getElementById('vehicleNo').value.trim().toUpperCase();
+            let vehicle = document.getElementById('vehicleNo').value.trim();
 
-            if(!dealer || !phone || currentScannedBundles.length === 0) {
-                alert("कृपया Dealer Details भरा आणि किमान १ Unique Bundle Scan करा!");
+            if(!dealer || !phone || !driver || !vehicle) {
+                alert("कृपया सर्व माहिती अचूक भरा!");
                 return;
             }
 
-            let available = productStock[category] || 0;
-            if (available < currentScannedBundles.length) {
-                if (!confirm(`⚠️ Stock Alert: Storage block current stock (${available} Pcs) is lower than dispatched qty (${currentScannedBundles.length} Pcs). Proceed anyway?`)) {
-                    return;
-                }
+            if(currentScannedBundles.length === 0) {
+                alert("कृपया किमान एक बारकोड स्कॅन करा!");
+                return;
             }
 
-            let generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+            let currentStock = productStock[cat] || 0;
+            if(currentStock < currentScannedBundles.length) {
+                alert(`⚠️ पुरेशी स्टॉक उपलब्ध नाही! सध्याचा स्टॉक: ${currentStock} Pcs`);
+                return;
+            }
 
-            const shipment = {
-                id: Date.now(),
-                dispatchDateTime: getCurrentFormattedDateTime(),
-                product: category,
-                dealerName: dealer,
-                dealerPhone: phone,
-                driverName: driver,
-                vehicleNo: vehicle,
+            let otp = Math.floor(1000 + Math.random() * 9000).toString();
+            let shipmentId = "SHP-" + Date.now();
+
+            let newShipment = {
+                id: shipmentId,
+                date: getCurrentFormattedDateTime(),
+                product: cat,
+                dealer: dealer,
+                phone: phone,
+                driver: driver,
+                vehicle: vehicle,
                 dispatchedBundles: [...currentScannedBundles],
                 receivedBundles: [],
                 damagedBundles: [],
                 missingBundles: [],
-                otp: generatedOtp,
+                otp: otp,
                 status: 'IN_TRANSIT'
             };
 
-            productStock[category] = Math.max(0, available - currentScannedBundles.length);
+            productStock[cat] -= currentScannedBundles.length;
             saveLocalStock();
 
-            syncToCloud('CREATE', shipment);
+            syncToCloud('DISPATCH', newShipment, null);
 
             currentScannedBundles = [];
             renderScannedTags();
-            document.getElementById('dealerName').value = '';
-            document.getElementById('dealerPhone').value = '';
-
-            let waMsg = `Hello ${dealer}, your shipment of ${shipment.dispatchedBundles.length} bundles (${category}) has been dispatched via vehicle ${vehicle}.\n\nYour Delivery Verification OTP is: *${generatedOtp}*`;
-            window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(waMsg)}`, '_blank');
+            document.getElementById('dealerName').value = "";
+            document.getElementById('dealerPhone').value = "";
+            
+            let msg = `*SHRI EKVIRA MFG COATS PVT LTD*\n🚚 *Dispatch OTP Notification*\n\nDear Dealer ${dealer},\nYour shipment for ${newShipment.product} (${newShipment.dispatchedBundles.length} Bundles) is dispatched.\n\n*Vehicle No:* ${vehicle}\n*Driver:* ${driver}\n*Delivery Confirmation OTP:* ${otp}`;
+            window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         function renderTable() {
-            let body = document.getElementById('dispatchTableBody');
-            if(!body) return;
-            body.innerHTML = "";
+            let tbody = document.getElementById('dispatchTableBody');
+            if(!tbody) return;
 
             if(shipments.length === 0) {
-                body.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">No shipments found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">नो शिपमेंट रेकॉर्ड सापडले नाहीत.</td></tr>`;
                 return;
             }
 
+            tbody.innerHTML = "";
             shipments.forEach(s => {
-                let dispCount = s.dispatchedBundles ? s.dispatchedBundles.length : 0;
-                let recCount = s.receivedBundles ? s.receivedBundles.length : 0;
-                let damCount = s.damagedBundles ? s.damagedBundles.length : 0;
-                let misCount = s.missingBundles ? s.missingBundles.length : 0;
+                let dispQty = s.dispatchedBundles ? s.dispatchedBundles.length : 0;
+                let recQty = s.receivedBundles ? s.receivedBundles.length : 0;
+                let damQty = s.damagedBundles ? s.damagedBundles.length : 0;
+                let misQty = s.missingBundles ? s.missingBundles.length : 0;
 
-                let isDelivered = s.status === 'DELIVERED';
-                let statusBadge = isDelivered 
-                    ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">✅ Delivered</span>`
-                    : `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">🚚 In-Transit</span>`;
+                let statusBadge = s.status === 'IN_TRANSIT' 
+                    ? `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">🚚 In-Transit</span>`
+                    : `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">✅ Delivered</span>`;
 
-                let actionBtn = isDelivered
-                    ? `<button onclick="openDeliveryModal(${s.id})" class="bg-slate-200 text-slate-700 px-2 py-1 rounded text-[11px] font-bold">👁️ View Details</button>`
-                    : `<button onclick="openDeliveryModal(${s.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded text-[11px] font-bold shadow">📦 Audit & Confirm</button>`;
+                let actionBtn = s.status === 'IN_TRANSIT'
+                    ? `<button onclick="openDeliveryModal('${s.id}')" class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] px-2.5 py-1 rounded font-bold shadow">🔍 Audit & Confirm</button>`
+                    : `<span class="text-xs text-gray-400 font-semibold">Confirmed</span>`;
 
-                let deleteBtn = activeRole === 'FACTORY' 
-                    ? `<button onclick="deleteShipment(${s.id})" class="text-red-500 hover:text-red-700 font-bold ml-2">🗑️</button>` 
-                    : '';
-
-                body.innerHTML += `
+                tbody.innerHTML += `
                     <tr class="border-b hover:bg-slate-50">
                         <td class="p-2 border">
-                            <div class="font-bold text-blue-900">${s.dealerName}</div>
-                            <div class="text-[10px] text-gray-500">${s.dispatchDateTime} | 📱 ${s.dealerPhone}</div>
-                            <div class="text-[10px] text-indigo-700 font-semibold">${s.product} | 🚚 ${s.vehicleNo} (${s.driverName})</div>
+                            <div class="font-bold text-blue-900">${s.dealer}</div>
+                            <div class="text-[10px] text-gray-500">${s.date} | ${s.product}</div>
+                            <div class="text-[10px] text-gray-600">🚚 ${s.driver} (${s.vehicle})</div>
                         </td>
-                        <td class="p-2 border text-center font-bold text-gray-700">${dispCount} Pcs</td>
-                        <td class="p-2 border text-center font-bold text-emerald-600">${isDelivered ? recCount + ' Pcs' : '-'}</td>
+                        <td class="p-2 border text-center font-bold text-gray-800">${dispQty} Pcs</td>
+                        <td class="p-2 border text-center font-bold text-emerald-600">${recQty} Pcs</td>
                         <td class="p-2 border text-center">
-                            ${isDelivered ? `<span class="text-orange-600 font-bold">${damCount} Dmg</span> / <span class="text-red-600 font-bold">${misCount} Mis</span>` : '-'}
+                            <span class="text-orange-600 font-bold">${damQty} Damaged</span> / 
+                            <span class="text-red-600 font-bold">${misQty} Missing</span>
                         </td>
-                        <td class="p-2 border text-center">
-                            <div class="flex items-center justify-center gap-1">
-                                ${statusBadge}
-                                ${actionBtn}
-                                ${deleteBtn}
-                            </div>
+                        <td class="p-2 border text-center space-y-1">
+                            <div>${statusBadge}</div>
+                            <div>${actionBtn}</div>
                         </td>
                     </tr>
                 `;
@@ -753,155 +797,133 @@ PRINT 1,1
             activeShipment = shipments.find(s => s.id === id);
             if(!activeShipment) return;
 
-            let infoBox = document.getElementById('deliveryModalInfo');
-            infoBox.innerHTML = `
-                <div><b>Dealer:</b> ${activeShipment.dealerName} (${activeShipment.dealerPhone})</div>
-                <div><b>Product:</b> ${activeShipment.product} | <b>Vehicle:</b> ${activeShipment.vehicleNo}</div>
+            document.getElementById('deliveryModalInfo').innerHTML = `
+                <div><b>Dealer:</b> ${activeShipment.dealer} (${activeShipment.phone})</div>
+                <div><b>Product:</b> ${activeShipment.product} | <b>Vehicle:</b> ${activeShipment.vehicle}</div>
             `;
 
+            document.getElementById('calcDispatched').innerText = `${activeShipment.dispatchedBundles.length} Pcs`;
+            
             let checklist = document.getElementById('bundleChecklist');
             checklist.innerHTML = "";
 
-            let isDelivered = activeShipment.status === 'DELIVERED';
-
-            activeShipment.dispatchedBundles.forEach((b, idx) => {
-                let status = 'OK';
-                if(isDelivered) {
-                    if(activeShipment.damagedBundles.includes(b)) status = 'DAMAGED';
-                    else if(activeShipment.missingBundles.includes(b)) status = 'MISSING';
-                }
-
+            activeShipment.dispatchedBundles.forEach(bCode => {
                 checklist.innerHTML += `
-                    <div class="flex items-center justify-between p-1 bg-white rounded border">
-                        <span class="font-mono font-bold">${b}</span>
-                        <select id="bundle_status_${idx}" onchange="recalculateDeliveryTotals()" ${isDelivered ? 'disabled' : ''} class="border rounded p-1 text-[11px] font-semibold">
-                            <option value="OK" ${status === 'OK' ? 'selected' : ''}>✅ OK (Delivered)</option>
-                            <option value="DAMAGED" ${status === 'DAMAGED' ? 'selected' : ''}>💔 Damaged</option>
-                            <option value="MISSING" ${status === 'MISSING' ? 'selected' : ''}>❌ Missing / Stolen</option>
+                    <div class="flex justify-between items-center bg-white p-1.5 border rounded">
+                        <span class="font-mono font-bold text-gray-800">${bCode}</span>
+                        <select id="status_${bCode}" onchange="recalculateDeliveryModal()" class="border text-[11px] rounded p-1 font-semibold">
+                            <option value="OK">✅ Delivered OK</option>
+                            <option value="DAMAGED">💔 Damaged</option>
+                            <option value="MISSING">❌ Missing / Stolen</option>
                         </select>
                     </div>
                 `;
             });
 
-            document.getElementById('deliveryOtpInput').value = "";
+            recalculateDeliveryModal();
             document.getElementById('deliveryModal').classList.remove('hidden');
-            recalculateDeliveryTotals();
         }
 
-        function recalculateDeliveryTotals() {
+        function recalculateDeliveryModal() {
             if(!activeShipment) return;
             let total = activeShipment.dispatchedBundles.length;
-            let ok = 0, issues = 0;
+            let damaged = 0;
+            let missing = 0;
 
-            activeShipment.dispatchedBundles.forEach((_, idx) => {
-                let el = document.getElementById(`bundle_status_${idx}`);
-                if(el && el.value === 'OK') ok++;
-                else issues++;
+            activeShipment.dispatchedBundles.forEach(bCode => {
+                let val = document.getElementById(`status_${bCode}`).value;
+                if(val === 'DAMAGED') damaged++;
+                if(val === 'MISSING') missing++;
             });
 
-            document.getElementById('calcDispatched').innerText = `${total} Pcs`;
-            document.getElementById('calcIssues').innerText = `${issues} Pcs`;
-            document.getElementById('calcNetDelivered').innerText = `${ok} Pcs`;
-        }
+            let netDelivered = total - (damaged + missing);
 
-        function confirmIndividualDelivery() {
-            if(!activeShipment) return;
-            if(activeShipment.status === 'DELIVERED') {
-                alert("ही डिलिव्हरी आधीच कन्फर्म झाली आहे!");
-                closeDeliveryModal();
-                return;
-            }
-
-            let enteredOtp = document.getElementById('deliveryOtpInput').value.trim();
-            if(enteredOtp !== activeShipment.otp) {
-                alert("❌ चुकीचा OTP! कृपया Dealer कडून आलेला योग्य OTP टाका.");
-                return;
-            }
-
-            let okBundles = [];
-            let damagedBundles = [];
-            let missingBundles = [];
-
-            activeShipment.dispatchedBundles.forEach((b, idx) => {
-                let val = document.getElementById(`bundle_status_${idx}`).value;
-                if(val === 'OK') okBundles.push(b);
-                else if(val === 'DAMAGED') damagedBundles.push(b);
-                else if(val === 'MISSING') missingBundles.push(b);
-            });
-
-            activeShipment.receivedBundles = okBundles;
-            activeShipment.damagedBundles = damagedBundles;
-            activeShipment.missingBundles = missingBundles;
-            activeShipment.status = 'DELIVERED';
-
-            syncToCloud('UPDATE', activeShipment);
-            closeDeliveryModal();
-            alert("✅ Delivery Successfully Audited & Verified via OTP!");
-        }
-
-        function resendWhatsAppOtp() {
-            if(!activeShipment) return;
-            let waMsg = `Reminder: Your Delivery OTP for ${activeShipment.product} is *${activeShipment.otp}*`;
-            window.open(`https://wa.me/91${activeShipment.dealerPhone}?text=${encodeURIComponent(waMsg)}`, '_blank');
+            document.getElementById('calcIssues').innerText = `${damaged + missing} Pcs`;
+            document.getElementById('calcNetDelivered').innerText = `${netDelivered} Pcs`;
         }
 
         function closeDeliveryModal() {
             document.getElementById('deliveryModal').classList.add('hidden');
-            stopCameraScanner();
-        }
-
-        function toggleCameraScanner() {
-            if(isCameraActive) stopCameraScanner();
-            else startCameraScanner();
-        }
-
-        function startCameraScanner() {
-            document.getElementById('cameraScannerBox').classList.remove('hidden');
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 150 } },
-                (decodedText) => {
-                    let text = decodedText.trim().toUpperCase();
-                    activeShipment.dispatchedBundles.forEach((b, idx) => {
-                        if(b === text) {
-                            let select = document.getElementById(`bundle_status_${idx}`);
-                            if(select) {
-                                select.value = 'DAMAGED';
-                                recalculateDeliveryTotals();
-                                try { beepAudio.play(); } catch(e){}
-                            }
-                        }
-                    });
-                },
-                () => {}
-            ).then(() => {
-                isCameraActive = true;
-                document.getElementById('toggleCamBtn').innerText = "🛑 Close Camera";
-            }).catch(err => {
-                console.error(err);
-                alert("कॅमेरा सुरू करताना त्रुटी आली!");
-            });
-        }
-
-        function stopCameraScanner() {
             if(html5QrCode && isCameraActive) {
                 html5QrCode.stop().then(() => {
                     isCameraActive = false;
                     document.getElementById('cameraScannerBox').classList.add('hidden');
-                    document.getElementById('toggleCamBtn').innerText = "📷 Open Mobile Camera";
-                }).catch(err => console.error(err));
+                });
             }
         }
 
+        let isCameraActive = false;
+        function toggleCameraScanner() {
+            let box = document.getElementById('cameraScannerBox');
+            let btn = document.getElementById('toggleCamBtn');
+
+            if(!isCameraActive) {
+                box.classList.remove('hidden');
+                html5QrCode = new Html5Qrcode("reader");
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 150 } },
+                    (decodedText) => {
+                        let code = decodedText.trim().toUpperCase();
+                        let select = document.getElementById(`status_${code}`);
+                        if(select) {
+                            select.value = 'DAMAGED';
+                            recalculateDeliveryModal();
+                            alert(`🚨 Bundle ${code} marked as DAMAGED!`);
+                        }
+                    },
+                    (errorMessage) => {}
+                );
+                isCameraActive = true;
+                btn.innerText = "✕ Close Camera";
+            } else {
+                html5QrCode.stop().then(() => {
+                    isCameraActive = false;
+                    box.classList.add('hidden');
+                    btn.innerText = "📷 Open Mobile Camera";
+                });
+            }
+        }
+
+        function confirmIndividualDelivery() {
+            if(!activeShipment) return;
+            let inputOtp = document.getElementById('deliveryOtpInput').value.trim();
+
+            if(inputOtp !== activeShipment.otp) {
+                alert("❌ चुकीचा OTP! कृपया अचूक OTP प्रविष्ट करा.");
+                return;
+            }
+
+            let received = [];
+            let damaged = [];
+            let missing = [];
+
+            activeShipment.dispatchedBundles.forEach(bCode => {
+                let val = document.getElementById(`status_${bCode}`).value;
+                if(val === 'OK') received.push(bCode);
+                if(val === 'DAMAGED') damaged.push(bCode);
+                if(val === 'MISSING') missing.push(bCode);
+            });
+
+            activeShipment.receivedBundles = received;
+            activeShipment.damagedBundles = damaged;
+            activeShipment.missingBundles = missing;
+            activeShipment.status = 'DELIVERED';
+
+            syncToCloud('CONFIRM_DELIVERY', activeShipment, null);
+
+            closeDeliveryModal();
+            alert("✅ डिलीव्हरी यशस्वीरीत्या कन्फर्म झाली आहे!");
+        }
+
         function renderFactoryReturns() {
-            let list = document.getElementById('factoryReturnList');
+            let container = document.getElementById('factoryReturnList');
             let badge = document.getElementById('pendingReturnBadge');
-            if(!list) return;
+            if(!container) return;
 
             let pendingReturns = [];
             shipments.forEach(s => {
-                if(s.status === 'DELIVERED' && s.damagedBundles && s.damagedBundles.length > 0 && !s.returnVerified) {
+                if(s.damagedBundles && s.damagedBundles.length > 0 && !s.returnVerified) {
                     pendingReturns.push(s);
                 }
             });
@@ -909,60 +931,60 @@ PRINT 1,1
             if(badge) badge.innerText = `${pendingReturns.length} Pending Verification`;
 
             if(pendingReturns.length === 0) {
-                list.innerHTML = `<div class="text-center text-orange-200 py-2">No damaged returns pending verification.</div>`;
+                container.innerHTML = `<div class="text-center text-orange-200 py-2">No damaged returns pending verification.</div>`;
                 return;
             }
 
-            list.innerHTML = "";
+            container.innerHTML = "";
             pendingReturns.forEach(s => {
-                list.innerHTML += `
-                    <div class="bg-orange-950/60 p-2 rounded border border-orange-700 flex justify-between items-center">
+                container.innerHTML += `
+                    <div class="bg-orange-950 p-2 rounded border border-orange-700 flex justify-between items-center">
                         <div>
-                            <b>${s.dealerName}</b> (${s.product})
-                            <div class="text-[10px] text-orange-300">Damaged Pcs: ${s.damagedBundles.join(', ')}</div>
+                            <div class="font-bold text-amber-300">${s.dealer} - ${s.product}</div>
+                            <div class="text-[10px] text-gray-300">Damaged Pcs: ${s.damagedBundles.join(', ')}</div>
                         </div>
-                        <button onclick="verifyFactoryReturn(${s.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded text-[10px]">
-                            ✅ Verify & Re-Inward Stock
+                        <button onclick="verifyReturnStock('${s.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded text-[11px]">
+                            ✅ Re-Inward to Store Stock
                         </button>
                     </div>
                 `;
             });
         }
 
-        function verifyFactoryReturn(id) {
-            let shipment = shipments.find(s => s.id === id);
+        function verifyReturnStock(shipmentId) {
+            let shipment = shipments.find(s => s.id === shipmentId);
             if(!shipment) return;
 
-            let qty = shipment.damagedBundles.length;
-            let cat = shipment.product;
-
-            productStock[cat] = (productStock[cat] || 0) + qty;
+            let damQty = shipment.damagedBundles.length;
+            productStock[shipment.product] = (productStock[shipment.product] || 0) + damQty;
             saveLocalStock();
 
             shipment.returnVerified = true;
-            syncToCloud('UPDATE', shipment);
-            alert(`✅ ${qty} Pcs return stock verified and added back to ${cat} Store Stock!`);
+            syncToCloud('VERIFY_RETURN', shipment, null);
+
+            alert(`✅ ${damQty} Pcs Damaged Stock returned and re-added to Store Stock!`);
         }
 
         function exportExcel() {
+            let wb = XLSX.utils.book_new();
             let data = shipments.map(s => ({
-                "Dispatch Date": s.dispatchDateTime,
-                "Dealer Name": s.dealerName,
-                "Phone": s.dealerPhone,
+                "Shipment ID": s.id,
+                "Date": s.date,
                 "Product": s.product,
-                "Driver": s.driverName,
-                "Vehicle No": s.vehicleNo,
-                "Dispatched Qty": s.dispatchedBundles ? s.dispatchedBundles.length : 0,
-                "Delivered Qty": s.receivedBundles ? s.receivedBundles.length : 0,
-                "Damaged Qty": s.damagedBundles ? s.damagedBundles.length : 0,
-                "Missing Qty": s.missingBundles ? s.missingBundles.length : 0,
+                "Dealer": s.dealer,
+                "Phone": s.phone,
+                "Driver": s.driver,
+                "Vehicle": s.vehicle,
+                "Dispatched Qty": s.dispatchedBundles.length,
+                "Delivered OK Qty": s.receivedBundles.length,
+                "Damaged Qty": s.damagedBundles.length,
+                "Missing Qty": s.missingBundles.length,
                 "Status": s.status
             }));
 
             let ws = XLSX.utils.json_to_sheet(data);
-            let wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Shipments");
-            XLSX.writeFile(wb, "Shri_Ekvira_ERP_Report.xlsx");
+            XLSX.writeFile(wb, "Ekvira_ERP_Delivery_Report.xlsx");
         }
     </script>
 </body>
